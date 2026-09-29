@@ -1,0 +1,25 @@
+# Compiled Java bytecode
+bin/
+*.class
+
+# Maven build artifacts
+target/
+
+# IDE & Editor files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary & Log files
+*.log
+scratch/
+tmp/
+cloudflared.exe
