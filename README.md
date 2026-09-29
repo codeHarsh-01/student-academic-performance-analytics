@@ -65,6 +65,20 @@
    - Multithreaded background generation of student progress report cards in clean HTML.
    - Single-click CSV export of full cohort risk assessments (`/api/export-csv`).
 
+6. **Role-Based Access Control (RBAC) & Dedicated Student Portal**:
+   - 👑 **Admin / HOD Portal**: System-wide analytics, dynamic risk weight configuration, iCloudEMS batch ingestion.
+   - 👨‍🏫 **Faculty Mentor Portal**: Section-level evaluation, marks & attendance updates, intervention dispatch.
+   - 🎓 **Student Personal Growth Portal**: Personal attendance radar, grade projection, weak-subject diagnosis, mentor remarks.
+   - Quick 1-click evaluator sign-in for seamless presentation demos.
+
+7. **Enterprise Relational Database Schema (`data/schema.sql`)**:
+   - PostgreSQL & SQLite compatible enterprise DDL schema with 9 tables, foreign keys, cascade rules, generated columns, and query optimization indexes (`users`, `students`, `courses`, `assessment_records`, `attendance_logs`, `risk_evaluations`, `erp_sync_audit`).
+   - Full persistence across browser refreshes and server sessions.
+
+8. **NIET iCloudEMS Core ERP Integration Gateway**:
+   - Live simulated ERP sync pipeline (`https://niet.icloudems.com/core-api/v2/cohort-sync`) with animated streaming telemetry, token handshake, and automated database batch commit.
+   - Dynamic Multi-Factor Risk Algorithm Weight Tuner allowing institutional calibration (Attendance 40%, Academics 40%, Backlogs 20%).
+
 ---
 
 ## 📚 Syllabus Concepts Demonstrated

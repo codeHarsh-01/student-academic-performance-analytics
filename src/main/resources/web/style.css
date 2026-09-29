@@ -799,3 +799,352 @@ body {
         padding: 20px;
     }
 }
+
+/* =========================================================
+   ENTERPRISE RBAC, STUDENT PORTAL & ERP GATEWAY STYLES
+   ========================================================= */
+
+/* User Role Card in Sidebar */
+.user-role-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.user-role-meta {
+    flex: 1;
+    overflow: hidden;
+}
+
+.user-role-meta h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.role-pill {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.role-pill.admin { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+.role-pill.faculty { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+.role-pill.student { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+.btn-role-switch {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-role-switch:hover {
+    background: var(--accent-blue);
+    color: #fff;
+    border-color: var(--accent-blue);
+}
+
+.erp-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* Quick Roles Grid in Auth Modal */
+.quick-roles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.role-select-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+}
+
+.role-select-card:hover, .role-select-card.active {
+    background: rgba(56, 189, 248, 0.08);
+    border-color: var(--accent-blue);
+    transform: translateY(-2px);
+}
+
+.role-select-card .role-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.role-select-card h4 {
+    font-size: 14px;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.role-select-card p {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-muted);
+}
+
+.demo-auth-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin: 16px 0;
+}
+
+.demo-auth-box h4 {
+    font-size: 12px;
+    color: var(--accent-amber);
+    margin-bottom: 8px;
+}
+
+.demo-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.btn-block {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+}
+
+/* STUDENT PERSONAL PORTAL STYLES */
+.student-portal-section {
+    padding: 24px;
+    margin-bottom: 30px;
+}
+
+.student-hero-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 20px;
+}
+
+.student-hero-left h2 {
+    font-size: 24px;
+    color: #fff;
+    margin: 6px 0 4px 0;
+}
+
+.student-hero-left p {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.sp-risk-chip {
+    text-align: right;
+}
+
+.sp-risk-title {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.sp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.sp-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.sp-card h4 {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.sp-metric {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.sp-metric.text-blue { color: var(--accent-blue); }
+
+.sp-details-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.sp-box {
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.sp-box.danger-box {
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.sp-box.danger-box h5 { color: #f87171; margin-bottom: 10px; font-size: 14px; }
+.sp-box.danger-box ul { padding-left: 20px; font-size: 13px; color: #fca5a5; }
+.sp-box.danger-box li { margin-bottom: 6px; }
+
+.sp-box.success-box {
+    background: rgba(56, 189, 248, 0.05);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.sp-box.success-box h5 { color: #38bdf8; margin-bottom: 10px; font-size: 14px; }
+.sp-box.success-box ul { padding-left: 20px; font-size: 13px; color: #93c5fd; }
+.sp-box.success-box li { margin-bottom: 6px; }
+
+/* ERP GATEWAY MODAL STYLES */
+.erp-gateway-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.erp-endpoint-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.erp-endpoint-badge code {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: var(--accent-emerald);
+    font-family: monospace;
+}
+
+.erp-status-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.sync-console-log {
+    background: #090d16;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #a7f3d0;
+    max-height: 180px;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
+.sync-console-log .log-info { color: #38bdf8; }
+.sync-console-log .log-success { color: #34d399; font-weight: 600; }
+.sync-console-log .log-warn { color: #fbbf24; }
+
+.erp-action-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* WEIGHT CONFIGURATION STYLES */
+.weight-control-group {
+    margin-bottom: 16px;
+}
+
+.weight-control-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #e2e8f0;
+    margin-bottom: 6px;
+}
+
+.weight-control-group input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent-blue);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.weight-total-bar {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px;
+    border-radius: 6px;
+    text-align: right;
+    font-size: 13px;
+}
