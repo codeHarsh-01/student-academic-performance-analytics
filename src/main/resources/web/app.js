@@ -301,6 +301,7 @@ function renderWorkspaceForSession() {
 
         // Render Student Specific Details
         renderStudentPersonalDetails(user);
+        fetchStudentProfileFromApi();
 
     } else {
         // === FACULTY OR HOD/ADMIN WORKSPACE ===
@@ -348,6 +349,48 @@ function renderWorkspaceForSession() {
 
         // Render Cohort Analytics
         renderCohortAnalytics();
+        fetchCohortAnalyticsFromApi();
+    }
+}
+
+// Live Supabase Student Fetch
+async function fetchStudentProfileFromApi() {
+    const token = sessionStorage.getItem('niet_jwt_token');
+    if (!token) return;
+    try {
+        const res = await fetch('/api/student/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.student) {
+                renderStudentPersonalDetails(data.student, data.grades);
+            }
+        }
+    } catch (e) {
+        console.warn('Live student fetch fallback:', e);
+    }
+}
+
+// Live Supabase Cohort Fetch
+async function fetchCohortAnalyticsFromApi() {
+    const token = sessionStorage.getItem('niet_jwt_token');
+    if (!token) return;
+    try {
+        const res = await fetch('/api/analytics/cohort-summary', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.students && data.students.length) {
+                appDatabase.students = data.students;
+                if (data.weights) appDatabase.weights = data.weights;
+                saveDatabase();
+                renderCohortAnalytics();
+            }
+        }
+    } catch (e) {
+        console.warn('Live cohort fetch fallback:', e);
     }
 }
 
@@ -691,15 +734,51 @@ function setupEventListeners() {
         hideLoginAlert();
     });
 
-    // 3. Login Form Submit
-    document.getElementById('loginForm')?.addEventListener('submit', (e) => {
+    // 3. Login Form Submit with Real Supabase PostgreSQL Authentication
+    document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const identifier = document.getElementById('loginIdentifier').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
+        const submitBtn = document.getElementById('btnSubmitLogin');
+        const originalBtnHtml = submitBtn.innerHTML;
         hideLoginAlert();
 
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Verifying with Supabase...</span>';
+
+            // Real backend call to /api/auth/login
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, password, role: selectedLoginTab })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                sessionStorage.setItem('niet_jwt_token', data.token);
+                currentSession = {
+                    isLoggedIn: true,
+                    role: data.user.role,
+                    user: data.user
+                };
+                sessionStorage.setItem('niet_active_session', JSON.stringify(currentSession));
+                showAppWorkspace();
+                return;
+            } else if (response.status === 401 || response.status === 400 || response.status === 403) {
+                showLoginAlert(data.error || 'Authentication failed. Please verify your credentials.');
+                return;
+            }
+        } catch (netErr) {
+            console.warn('API call failed or offline mode, falling back to local session:', netErr);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+
+        // Local Resilient Fallback (if serverless API is offline)
         if (selectedLoginTab === 'STUDENT') {
-            // Check student ERP ID
             const foundStudent = appDatabase.students.find(s => s.erpId.toUpperCase() === identifier.toUpperCase());
             if (!foundStudent) {
                 showLoginAlert(`Invalid Student ERP ID "${identifier}". Enter an existing ERP ID like NIET2021001 or NIET2021002.`);
@@ -709,13 +788,7 @@ function setupEventListeners() {
                 showLoginAlert('Incorrect password. For testing, student password is: student123');
                 return;
             }
-
-            // Authenticated as Student!
-            currentSession = {
-                isLoggedIn: true,
-                role: 'STUDENT',
-                user: foundStudent
-            };
+            currentSession = { isLoggedIn: true, role: 'STUDENT', user: foundStudent };
 
         } else if (selectedLoginTab === 'FACULTY') {
             if (!identifier.toLowerCase().includes('faculty') && !identifier.toLowerCase().includes('disha')) {
@@ -726,13 +799,7 @@ function setupEventListeners() {
                 showLoginAlert('Incorrect password. Faculty password is: faculty123');
                 return;
             }
-
-            // Authenticated as Faculty!
-            currentSession = {
-                isLoggedIn: true,
-                role: 'FACULTY',
-                user: { name: 'Prof. Disha Saini', email: identifier, role: 'FACULTY' }
-            };
+            currentSession = { isLoggedIn: true, role: 'FACULTY', user: { name: 'Prof. Disha Saini', email: identifier, role: 'FACULTY' } };
 
         } else if (selectedLoginTab === 'ADMIN') {
             if (!identifier.toLowerCase().includes('hod') && !identifier.toLowerCase().includes('admin')) {
@@ -743,16 +810,9 @@ function setupEventListeners() {
                 showLoginAlert('Incorrect password. HOD Admin password is: admin123');
                 return;
             }
-
-            // Authenticated as Admin!
-            currentSession = {
-                isLoggedIn: true,
-                role: 'ADMIN',
-                user: { name: 'Dr. HOD (Admin)', email: identifier, role: 'ADMIN' }
-            };
+            currentSession = { isLoggedIn: true, role: 'ADMIN', user: { name: 'Dr. HOD (Admin)', email: identifier, role: 'ADMIN' } };
         }
 
-        // Save session and unlock workspace
         sessionStorage.setItem('niet_active_session', JSON.stringify(currentSession));
         showAppWorkspace();
     });
