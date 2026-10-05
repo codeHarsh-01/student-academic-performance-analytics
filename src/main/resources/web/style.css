@@ -45,8 +45,9 @@ body {
 
 /* Layout */
 .app-layout {
-    display: flex;
+    display: flex !important;
     min-height: 100vh;
+    width: 100%;
 }
 
 /* Sidebar */
@@ -213,7 +214,8 @@ body {
 
 /* Main Content */
 .main-content {
-    flex-grow: 1;
+    flex: 1;
+    min-width: 0;
     padding: 28px 36px;
     overflow-y: auto;
 }

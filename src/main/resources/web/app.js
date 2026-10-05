@@ -130,7 +130,8 @@ function showLoginGateway() {
 
 function showAppWorkspace() {
     document.getElementById('loginGateway').style.display = 'none';
-    document.getElementById('appWorkspace').style.display = 'grid';
+    const workspace = document.getElementById('appWorkspace');
+    workspace.style.display = 'flex';
     renderWorkspaceForSession();
 }
 
@@ -353,14 +354,29 @@ function renderWorkspaceForSession() {
 // Student Personal Profile Rendering
 function renderStudentPersonalDetails(studentRaw) {
     const enriched = enrichStudentsList();
-    const student = enriched.find(s => s.erpId === studentRaw.erpId) || studentRaw;
+    let student = enriched.find(s => s.erpId?.toUpperCase() === studentRaw.erpId?.toUpperCase()) || studentRaw;
+    if (!student.riskFactors || !student.interventions) {
+        const risk = evaluateStudentRisk(student);
+        student = {
+            ...student,
+            riskScore: risk.score,
+            riskLevel: risk.riskLevel,
+            riskLabel: risk.riskLabel,
+            badgeClass: risk.badgeClass,
+            riskFactors: risk.factors,
+            interventions: risk.interventions,
+            grade: getGradeLetter(student.averageScore || 0)
+        };
+    }
 
-    document.getElementById('spStudentName').textContent = student.name;
-    document.getElementById('spStudentMeta').textContent = `ERP: ${student.erpId} | Section: ${student.section} | Semester: ${student.semester} | NIET Greater Noida`;
+    document.getElementById('spStudentName').textContent = student.name || 'Student';
+    document.getElementById('spStudentMeta').textContent = `ERP: ${student.erpId || '--'} | Section: ${student.section || 'CSE-R'} | Semester: ${student.semester || 5} | NIET Greater Noida`;
 
     const riskBadge = document.getElementById('spRiskBadge');
-    riskBadge.textContent = student.riskLabel;
-    riskBadge.className = 'badge ' + student.badgeClass;
+    if (riskBadge) {
+        riskBadge.textContent = student.riskLabel || 'Low Risk';
+        riskBadge.className = 'badge ' + (student.badgeClass || 'badge-success');
+    }
 
     document.getElementById('spAttendanceVal').textContent = student.attendance + '%';
     const attBar = document.getElementById('spAttendanceBar');
