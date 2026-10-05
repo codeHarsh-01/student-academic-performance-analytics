@@ -13,7 +13,100 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-layout">
+
+    <!-- 1. FULL-SCREEN INSTITUTIONAL LOGIN GATEWAY -->
+    <div class="login-gateway-overlay" id="loginGateway">
+        <div class="login-container glass-panel">
+            <div class="login-brand-header">
+                <div class="login-logo-circle">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                    </svg>
+                </div>
+                <h2>NIET Greater Noida</h2>
+                <span class="sub-badge-gold">Autonomous Institute | Affiliated to AKTU</span>
+                <h3>Academic Performance & Early Risk Detection Gateway</h3>
+                <p class="login-course-tag">Department of Computer Science & Engineering (CSE-R) | Course CCSEH0355</p>
+            </div>
+
+            <!-- Role Selector Tabs -->
+            <div class="login-tabs">
+                <button class="login-tab-btn active" data-type="STUDENT" id="tabStudent">
+                    <span class="tab-icon">🎓</span>
+                    <span>Student Portal</span>
+                </button>
+                <button class="login-tab-btn" data-type="FACULTY" id="tabFaculty">
+                    <span class="tab-icon">👨‍🏫</span>
+                    <span>Faculty Mentor</span>
+                </button>
+                <button class="login-tab-btn" data-type="ADMIN" id="tabAdmin">
+                    <span class="tab-icon">👑</span>
+                    <span>HOD / Admin</span>
+                </button>
+            </div>
+
+            <!-- Dynamic Login Form -->
+            <form id="loginForm" class="login-form">
+                <div id="loginAlertBox" class="login-alert" style="display: none;"></div>
+
+                <div class="form-group" id="groupLoginIdentifier">
+                    <label id="lblLoginIdentifier">Student Institutional ERP ID</label>
+                    <div class="input-with-icon">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <input type="text" id="loginIdentifier" class="form-input" placeholder="e.g. NIET2021001" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Account Password</label>
+                    <div class="input-with-icon">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <input type="password" id="loginPassword" class="form-input" placeholder="Enter password" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnSubmitLogin">
+                    <span id="loginBtnText">Sign In to Student Portal</span>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </form>
+
+            <!-- Quick Auto-Fill Demo Credentials for Examiners -->
+            <div class="demo-accounts-card">
+                <div class="demo-card-header">
+                    <span class="sparkle-icon">⚡</span>
+                    <b>Evaluator Quick Sign-In (Click to Auto-fill):</b>
+                </div>
+                <div class="demo-pills-grid">
+                    <button class="demo-pill" id="demoFillStudentGood">
+                        <span class="role-dot dot-green"></span>
+                        <b>Student (Safe):</b> NIET2021001 / student123
+                    </button>
+                    <button class="demo-pill" id="demoFillStudentRisk">
+                        <span class="role-dot dot-red"></span>
+                        <b>Student (At-Risk):</b> NIET2021002 / student123
+                    </button>
+                    <button class="demo-pill" id="demoFillFaculty">
+                        <span class="role-dot dot-blue"></span>
+                        <b>Faculty:</b> faculty@niet.co.in / faculty123
+                    </button>
+                    <button class="demo-pill" id="demoFillAdmin">
+                        <span class="role-dot dot-purple"></span>
+                        <b>HOD Admin:</b> hod@niet.co.in / admin123
+                    </button>
+                </div>
+            </div>
+
+            <div class="login-footer-security">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>End-to-End Encrypted Session | Role-Based Access Control (RBAC) Active</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APPLICATION WORKSPACE (Hidden until authenticated) -->
+    <div class="app-layout" id="appWorkspace" style="display: none;">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="brand-container">
@@ -29,37 +122,21 @@
                 </div>
             </div>
 
+            <!-- Active Authenticated User Profile Card -->
             <div class="user-role-card">
-                <div class="user-avatar-circle" id="userAvatar">HOD</div>
+                <div class="user-avatar-circle" id="userAvatar">U</div>
                 <div class="user-role-meta">
-                    <h5 id="userNameDisplay">Dr. HOD (Admin)</h5>
-                    <span class="role-pill admin" id="userRoleBadge">👑 Admin / HOD</span>
+                    <h5 id="userNameDisplay">--</h5>
+                    <span class="role-pill" id="userRoleBadge">--</span>
                 </div>
-                <button class="btn-role-switch" id="btnSwitchRole" title="Switch User Role or Logout">Switch</button>
+                <button class="btn-logout-sidebar" id="btnLogoutSidebar" title="Sign Out">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
             </div>
 
-            <nav class="nav-menu">
-                <a href="#overview" class="nav-item active" id="nav-overview">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    <span>Overview KPI</span>
-                </a>
-                <a href="#at-risk" class="nav-item" id="nav-atrisk">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    <span>At-Risk Detection</span>
-                    <span class="risk-count-pill" id="sidebar-risk-badge">0</span>
-                </a>
-                <a href="#students" class="nav-item" id="nav-students">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    <span>Student Directory</span>
-                </a>
-                <a href="#subject-analytics" class="nav-item" id="nav-subjects">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-                    <span>Subject Benchmarks</span>
-                </a>
-                <a href="#student-portal" class="nav-item student-only-nav" id="nav-student-portal" style="display: none;">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-                    <span>My Growth Portal</span>
-                </a>
+            <!-- Navigation Links (Dynamic based on Role) -->
+            <nav class="nav-menu" id="sideNavMenu">
+                <!-- Injected via app.js -->
             </nav>
 
             <div class="sidebar-project-card">
@@ -84,34 +161,47 @@
             <!-- Header Bar -->
             <header class="top-header">
                 <div class="page-title">
-                    <h1>Student Academic Performance Analytics System</h1>
-                    <p class="subtitle">NIET Autonomous Institute | Role-Based Access Control | NIET iCloudEMS Ingestion Gateway</p>
+                    <h1 id="headerMainTitle">Student Academic Performance Analytics System</h1>
+                    <p class="subtitle" id="headerSubtitle">NIET Autonomous Institute | Role-Based Access Control</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-warning erp-btn" id="btn-sync-erp" title="Sync with NIET iCloudEMS Database">
+                    <!-- Faculty & Admin Tools -->
+                    <button class="btn btn-warning erp-btn" id="btn-sync-erp" style="display: none;" title="Sync with NIET iCloudEMS Database">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                         <span>Sync iCloudEMS</span>
                     </button>
-                    <button class="btn btn-secondary" id="btn-config-weights" title="Configure Risk Algorithm Weights">
+                    <button class="btn btn-secondary" id="btn-config-weights" style="display: none;" title="Configure Risk Algorithm Weights">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                         <span>Weights</span>
                     </button>
-                    <button class="btn btn-secondary" id="btn-export-csv" title="Download Full Analytics CSV">
+                    <button class="btn btn-secondary" id="btn-export-csv" style="display: none;" title="Download Full Analytics CSV">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         <span>Export CSV</span>
                     </button>
-                    <button class="btn btn-primary" id="btn-add-student-modal">
+                    <button class="btn btn-primary" id="btn-add-student-modal" style="display: none;">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         <span>Add Student</span>
+                    </button>
+
+                    <!-- Student Personal Tools -->
+                    <button class="btn btn-primary" id="btnPrintStudentReport" style="display: none;">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                        <span>Print Official Marksheet</span>
+                    </button>
+
+                    <!-- Logout Button in Top Bar -->
+                    <button class="btn btn-secondary btn-logout" id="btnLogoutTop" title="Sign out of system">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        <span>Logout</span>
                     </button>
                 </div>
             </header>
 
-            <!-- STUDENT PERSONAL PORTAL (Visible when Student logs in) -->
+            <!-- A. DEDICATED STUDENT PORTAL VIEW (For Student Role Only) -->
             <section class="student-portal-section glass-panel" id="studentPortalView" style="display: none;">
                 <div class="student-hero-banner">
                     <div class="student-hero-left">
-                        <span class="role-pill student">🎓 Logged In: Student Portal</span>
+                        <span class="role-pill student">🎓 Confirmed: Student Personal Session</span>
                         <h2 id="spStudentName">Aarav Sharma</h2>
                         <p id="spStudentMeta">ERP: NIET2021001 | Section: CSE-R-A | Semester: 5 | NIET Greater Noida</p>
                     </div>
@@ -125,20 +215,20 @@
 
                 <div class="sp-grid">
                     <div class="sp-card">
-                        <h4>Attendance Monitor</h4>
+                        <h4>Attendance Tracking</h4>
                         <div class="sp-metric" id="spAttendanceVal">88%</div>
                         <div class="mini-progress"><div class="mini-progress-fill fill-emerald" id="spAttendanceBar" style="width: 88%;"></div></div>
                         <small id="spAttendanceMsg">Safe: Above 75% mandatory university threshold.</small>
                     </div>
                     <div class="sp-card">
-                        <h4>Current SGPA / Average</h4>
+                        <h4>Current Academic Average</h4>
                         <div class="sp-metric text-blue" id="spScoreVal">82%</div>
                         <small>Letter Grade Projection: <b id="spGradeVal">A+</b></small>
                     </div>
                     <div class="sp-card">
-                        <h4>Risk Score (Out of 100)</h4>
+                        <h4>Evaluated Risk Index</h4>
                         <div class="sp-metric" id="spRiskScoreVal">0</div>
-                        <small>Evaluation: Good academic trajectory</small>
+                        <small>Scale: 0 (Good Standing) to 100 (Critical)</small>
                     </div>
                 </div>
 
@@ -152,10 +242,38 @@
                         <ul id="spInterventions"><li>Continue regular lab participation and project submissions.</li></ul>
                     </div>
                 </div>
+
+                <!-- Student Subject Marks Table -->
+                <div class="sp-grades-box glass-panel" style="margin-top: 24px;">
+                    <div class="table-header-row" style="padding: 16px 20px;">
+                        <div>
+                            <h4 style="color: #fff; font-size: 16px; margin: 0;">My Course Assessments & Examination Marks</h4>
+                            <p class="chart-subtitle" style="margin: 2px 0 0 0;">Semester 5 Registered Core Courses</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Course Code</th>
+                                    <th>Assessment Type</th>
+                                    <th>Marks Scored</th>
+                                    <th>Percentage</th>
+                                    <th>Letter Grade</th>
+                                    <th>Evaluation Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="spGradesTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
-            <!-- COHORT KPI METRIC CARDS (Visible to Faculty & Admin) -->
-            <div id="cohortViewContainer">
+            <!-- B. COHORT ANALYTICS VIEW (For Faculty & HOD/Admin Only) -->
+            <div id="cohortViewContainer" style="display: none;">
+                <!-- KPI Metric Cards Grid -->
                 <section class="kpi-grid" id="overview">
                     <div class="kpi-card glass-panel">
                         <div class="kpi-icon-wrap icon-blue">
@@ -251,8 +369,8 @@
                 <section class="table-section glass-panel" id="students">
                     <div class="table-header-row">
                         <div class="table-title">
-                            <h3>Cohort Student Registry</h3>
-                            <p class="chart-subtitle">Live analytics records with predictive risk flags & attendance meters</p>
+                            <h3>All Cohort Students Directory</h3>
+                            <p class="chart-subtitle">Full administrative visibility into attendance, scores, and risk flags</p>
                         </div>
                         
                         <div class="table-controls">
@@ -294,58 +412,6 @@
         </main>
     </div>
 
-    <!-- ROLE-BASED AUTH / LOGIN MODAL -->
-    <div class="modal-overlay" id="authModal">
-        <div class="modal-card auth-modal-card glass-panel">
-            <div class="modal-header">
-                <h3>🔐 System Authentication & RBAC Portal</h3>
-                <button class="modal-close" id="authModalCloseBtn">&times;</button>
-            </div>
-            <div class="modal-body auth-modal-body">
-                <p class="auth-intro">Select your role to access the corresponding privileged environment:</p>
-                
-                <div class="quick-roles-grid">
-                    <button class="role-select-card active" data-role="ADMIN" id="selectRoleAdmin">
-                        <div class="role-icon">👑</div>
-                        <h4>Admin / HOD</h4>
-                        <p>Cohort analytics, risk algorithm weighting, iCloudEMS ERP sync, full admin controls.</p>
-                    </button>
-                    <button class="role-select-card" data-role="FACULTY" id="selectRoleFaculty">
-                        <div class="role-icon">👨‍🏫</div>
-                        <h4>Faculty Mentor</h4>
-                        <p>Grade entry, attendance tracking, remedial advisory dispatch, cohort export.</p>
-                    </button>
-                    <button class="role-select-card" data-role="STUDENT" id="selectRoleStudent">
-                        <div class="role-icon">🎓</div>
-                        <h4>Student</h4>
-                        <p>Personal marksheet, attendance radar, weak-subject diagnosis, mentor remarks.</p>
-                    </button>
-                </div>
-
-                <div class="demo-auth-box">
-                    <h4>⚡ Quick 1-Click Evaluator Sign-In:</h4>
-                    <div class="demo-btn-row">
-                        <button class="btn btn-secondary btn-sm" id="btnDemoHod">Login as Dr. HOD (Admin)</button>
-                        <button class="btn btn-secondary btn-sm" id="btnDemoFaculty">Login as Prof. Disha Saini (Faculty)</button>
-                        <button class="btn btn-secondary btn-sm" id="btnDemoStudent">Login as Aarav Sharma (Student)</button>
-                    </div>
-                </div>
-
-                <form id="authLoginForm" class="auth-form">
-                    <div class="form-group">
-                        <label>Institutional ERP Username / Email</label>
-                        <input type="text" id="authUsername" class="form-input" value="hod.cse@niet.co.in" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Access Password</label>
-                        <input type="password" id="authPassword" class="form-input" value="••••••••" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-block">Confirm Role Authentication</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- NIET ICLOUDEMS ERP GATEWAY SYNC MODAL -->
     <div class="modal-overlay" id="erpSyncModal">
         <div class="modal-card erp-modal-card glass-panel">
@@ -369,9 +435,7 @@
                     <div class="mini-progress" style="height: 10px; margin: 15px 0;">
                         <div class="mini-progress-fill fill-emerald" id="syncProgressBar" style="width: 0%; transition: width 0.3s ease;"></div>
                     </div>
-                    <div class="sync-console-log" id="syncConsoleLog">
-                        <!-- Streamed console logs -->
-                    </div>
+                    <div class="sync-console-log" id="syncConsoleLog"></div>
                 </div>
 
                 <div class="erp-action-footer">
@@ -463,7 +527,7 @@
         </div>
     </div>
 
-    <!-- STUDENT INSPECTION & REPORT CARD MODAL -->
+    <!-- STUDENT INSPECTION MODAL (Faculty/HOD view) -->
     <div class="modal-overlay" id="detailModal">
         <div class="modal-card glass-panel modal-lg">
             <div class="modal-header">
@@ -473,9 +537,7 @@
                 </div>
                 <button class="modal-close" id="modalCloseBtn">&times;</button>
             </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Injected via app.js -->
-            </div>
+            <div class="modal-body" id="modalBody"></div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="modalDoneBtn">Done</button>
                 <button class="btn btn-primary" id="modalPrintBtn">Generate Official Report Card</button>

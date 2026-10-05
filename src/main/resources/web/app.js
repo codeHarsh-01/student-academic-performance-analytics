@@ -1,7 +1,7 @@
 // ====================================================================
 // NIET Student Academic Performance Analytics System - Enterprise Frontend
 // Course: CCSEH0355 | NIET Greater Noida (Autonomous Institute)
-// RBAC, Persistent Storage, iCloudEMS ERP Gateway, Dynamic Risk Weighting
+// Strict RBAC Authentication Gateway, Isolated Student & Faculty Views
 // ====================================================================
 
 // Default Seed Students (used if database empty)
@@ -22,74 +22,72 @@ const DEFAULT_STUDENTS = [
 
 const DEFAULT_GRADES = {
     's001': [
-        { courseCode: 'CCSEH0355', assessment: 'Mid-Term', marks: 38, max: 50, percentage: 76, grade: 'B+' },
-        { courseCode: 'CCSEH0355', assessment: 'End-Term', marks: 71, max: 100, percentage: 71, grade: 'B' },
-        { courseCode: 'CCSEH0351', assessment: 'Mid-Term', marks: 44, max: 50, percentage: 88, grade: 'A' },
-        { courseCode: 'CCSEH0351', assessment: 'End-Term', marks: 85, max: 100, percentage: 85, grade: 'A' },
+        { courseCode: 'CCSEH0355', assessment: 'Mid-Term Exam', marks: 38, max: 50, percentage: 76, grade: 'B+' },
+        { courseCode: 'CCSEH0355', assessment: 'End-Term Exam', marks: 71, max: 100, percentage: 71, grade: 'B' },
+        { courseCode: 'CCSEH0351', assessment: 'Data Structures Lab', marks: 44, max: 50, percentage: 88, grade: 'A' },
+        { courseCode: 'CCSEH0351', assessment: 'End-Term Exam', marks: 85, max: 100, percentage: 85, grade: 'A' },
     ],
     's002': [
-        { courseCode: 'CCSEH0355', assessment: 'Mid-Term', marks: 18, max: 50, percentage: 36, grade: 'F' },
-        { courseCode: 'CCSEH0355', assessment: 'End-Term', marks: 42, max: 100, percentage: 42, grade: 'D' },
-        { courseCode: 'CCSEH0351', assessment: 'Mid-Term', marks: 22, max: 50, percentage: 44, grade: 'D' },
-        { courseCode: 'CCSEH0351', assessment: 'End-Term', marks: 50, max: 100, percentage: 50, grade: 'C' },
+        { courseCode: 'CCSEH0355', assessment: 'Mid-Term Exam', marks: 18, max: 50, percentage: 36, grade: 'F' },
+        { courseCode: 'CCSEH0355', assessment: 'End-Term Exam', marks: 42, max: 100, percentage: 42, grade: 'D' },
+        { courseCode: 'CCSEH0351', assessment: 'Data Structures Lab', marks: 22, max: 50, percentage: 44, grade: 'D' },
+        { courseCode: 'CCSEH0351', assessment: 'End-Term Exam', marks: 50, max: 100, percentage: 50, grade: 'C' },
     ],
     's005': [
-        { courseCode: 'CCSEH0355', assessment: 'Mid-Term', marks: 14, max: 50, percentage: 28, grade: 'F' },
-        { courseCode: 'CCSEH0355', assessment: 'End-Term', marks: 35, max: 100, percentage: 35, grade: 'F' },
-        { courseCode: 'CCSEH0351', assessment: 'Mid-Term', marks: 19, max: 50, percentage: 38, grade: 'F' },
-        { courseCode: 'CCSEH0351', assessment: 'End-Term', marks: 41, max: 100, percentage: 41, grade: 'D' },
+        { courseCode: 'CCSEH0355', assessment: 'Mid-Term Exam', marks: 14, max: 50, percentage: 28, grade: 'F' },
+        { courseCode: 'CCSEH0355', assessment: 'End-Term Exam', marks: 35, max: 100, percentage: 35, grade: 'F' },
+        { courseCode: 'CCSEH0351', assessment: 'Data Structures Lab', marks: 19, max: 50, percentage: 38, grade: 'F' },
+        { courseCode: 'CCSEH0351', assessment: 'End-Term Exam', marks: 41, max: 100, percentage: 41, grade: 'D' },
     ],
     's009': [
-        { courseCode: 'CCSEH0355', assessment: 'Mid-Term', marks: 12, max: 50, percentage: 24, grade: 'F' },
-        { courseCode: 'CCSEH0355', assessment: 'End-Term', marks: 30, max: 100, percentage: 30, grade: 'F' },
-        { courseCode: 'CCSEH0351', assessment: 'Mid-Term', marks: 15, max: 50, percentage: 30, grade: 'F' },
-        { courseCode: 'CCSEH0351', assessment: 'End-Term', marks: 38, max: 100, percentage: 38, grade: 'F' },
+        { courseCode: 'CCSEH0355', assessment: 'Mid-Term Exam', marks: 12, max: 50, percentage: 24, grade: 'F' },
+        { courseCode: 'CCSEH0355', assessment: 'End-Term Exam', marks: 30, max: 100, percentage: 30, grade: 'F' },
+        { courseCode: 'CCSEH0351', assessment: 'Data Structures Lab', marks: 15, max: 50, percentage: 30, grade: 'F' },
+        { courseCode: 'CCSEH0351', assessment: 'End-Term Exam', marks: 38, max: 100, percentage: 38, grade: 'F' },
     ]
 };
 
-// Global App State
+// Application State
 let appDatabase = {
     students: [],
     grades: {},
     weights: { attendance: 40, academic: 40, backlog: 20 },
-    currentUser: {
-        role: 'ADMIN',
-        name: 'Dr. HOD (Admin)',
-        email: 'hod.cse@niet.co.in',
-        avatar: 'HOD',
-        erpId: null
-    }
+};
+
+let currentSession = {
+    isLoggedIn: false,
+    role: null, // 'STUDENT' | 'FACULTY' | 'ADMIN'
+    user: null  // Student object or Faculty/Admin profile
 };
 
 let currentFilter = 'ALL';
+let selectedLoginTab = 'STUDENT';
 let gradeChart = null;
 let riskChart = null;
 let subjectChart = null;
 
-// Initialize System on DOM Load
+// App Startup
 document.addEventListener('DOMContentLoaded', () => {
     loadDatabase();
-    initApp();
+    checkExistingSession();
     setupEventListeners();
 });
 
-// Database Persistence Manager
+// Database Storage
 function loadDatabase() {
     try {
-        const stored = localStorage.getItem('niet_analytics_db_v2');
+        const stored = localStorage.getItem('niet_analytics_db_v3');
         if (stored) {
             const parsed = JSON.parse(stored);
             appDatabase.students = parsed.students || DEFAULT_STUDENTS;
             appDatabase.grades = parsed.grades || DEFAULT_GRADES;
             appDatabase.weights = parsed.weights || { attendance: 40, academic: 40, backlog: 20 };
-            if (parsed.currentUser) appDatabase.currentUser = parsed.currentUser;
         } else {
             appDatabase.students = JSON.parse(JSON.stringify(DEFAULT_STUDENTS));
             appDatabase.grades = JSON.parse(JSON.stringify(DEFAULT_GRADES));
             saveDatabase();
         }
     } catch (e) {
-        console.error('Storage load failed, using fallback:', e);
         appDatabase.students = JSON.parse(JSON.stringify(DEFAULT_STUDENTS));
         appDatabase.grades = JSON.parse(JSON.stringify(DEFAULT_GRADES));
     }
@@ -97,18 +95,54 @@ function loadDatabase() {
 
 function saveDatabase() {
     try {
-        localStorage.setItem('niet_analytics_db_v2', JSON.stringify({
+        localStorage.setItem('niet_analytics_db_v3', JSON.stringify({
             students: appDatabase.students,
             grades: appDatabase.grades,
-            weights: appDatabase.weights,
-            currentUser: appDatabase.currentUser
+            weights: appDatabase.weights
         }));
     } catch (e) {
         console.warn('LocalStorage save failed:', e);
     }
 }
 
-// Multi-Factor Risk Algorithm (Dynamic Weights)
+// Session Check
+function checkExistingSession() {
+    try {
+        const savedSession = sessionStorage.getItem('niet_active_session');
+        if (savedSession) {
+            const parsed = JSON.parse(savedSession);
+            if (parsed && parsed.isLoggedIn) {
+                currentSession = parsed;
+                showAppWorkspace();
+                return;
+            }
+        }
+    } catch (e) {}
+
+    // Default: Must show Login Gateway
+    showLoginGateway();
+}
+
+function showLoginGateway() {
+    document.getElementById('loginGateway').style.display = 'flex';
+    document.getElementById('appWorkspace').style.display = 'none';
+}
+
+function showAppWorkspace() {
+    document.getElementById('loginGateway').style.display = 'none';
+    document.getElementById('appWorkspace').style.display = 'grid';
+    renderWorkspaceForSession();
+}
+
+function logoutUser() {
+    currentSession = { isLoggedIn: false, role: null, user: null };
+    sessionStorage.removeItem('niet_active_session');
+    document.getElementById('loginForm').reset();
+    hideLoginAlert();
+    showLoginGateway();
+}
+
+// Multi-Factor Risk Algorithm
 function evaluateStudentRisk(student) {
     const { attendance: wAtt, academic: wAcad, backlog: wBack } = appDatabase.weights;
     let score = 0;
@@ -206,60 +240,124 @@ function enrichStudentsList() {
     });
 }
 
-// App Initialization
-function initApp() {
-    updateUserInterfaceByRole();
-    renderAllViews();
-}
-
-function updateUserInterfaceByRole() {
-    const user = appDatabase.currentUser;
+// Render Workspace Based on Current Role
+function renderWorkspaceForSession() {
+    const { role, user } = currentSession;
     const nameEl = document.getElementById('userNameDisplay');
     const badgeEl = document.getElementById('userRoleBadge');
     const avatarEl = document.getElementById('userAvatar');
+    const titleEl = document.getElementById('headerMainTitle');
+    const subEl = document.getElementById('headerSubtitle');
+    const navMenu = document.getElementById('sideNavMenu');
+
+    // Controls
     const syncBtn = document.getElementById('btn-sync-erp');
     const weightsBtn = document.getElementById('btn-config-weights');
+    const exportBtn = document.getElementById('btn-export-csv');
     const addStudentBtn = document.getElementById('btn-add-student-modal');
+    const printStudentBtn = document.getElementById('btnPrintStudentReport');
+
+    // Views
     const studentPortalView = document.getElementById('studentPortalView');
     const cohortView = document.getElementById('cohortViewContainer');
-    const studentPortalNav = document.getElementById('nav-student-portal');
 
-    if (nameEl) nameEl.textContent = user.name;
-    if (avatarEl) avatarEl.textContent = user.avatar || 'U';
+    if (role === 'STUDENT') {
+        // === STUDENT PERSONAL WORKSPACE ===
+        nameEl.textContent = user.name;
+        avatarEl.textContent = user.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+        badgeEl.className = 'role-pill student';
+        badgeEl.textContent = '🎓 Student Portal';
 
-    if (badgeEl) {
-        badgeEl.className = 'role-pill ' + user.role.toLowerCase();
-        if (user.role === 'ADMIN') badgeEl.textContent = '👑 Admin / HOD';
-        else if (user.role === 'FACULTY') badgeEl.textContent = '👨‍🏫 Faculty';
-        else badgeEl.textContent = '🎓 Student';
-    }
+        titleEl.textContent = `Student Academic Growth Portal - ${user.name}`;
+        subEl.textContent = `Institutional ERP: ${user.erpId} | Section ${user.section} | Semester ${user.semester} | NIET Greater Noida`;
 
-    if (user.role === 'STUDENT') {
-        if (studentPortalView) studentPortalView.style.display = 'block';
-        if (cohortView) cohortView.style.display = 'none';
-        if (studentPortalNav) studentPortalNav.style.display = 'flex';
-        if (syncBtn) syncBtn.style.display = 'none';
-        if (weightsBtn) weightsBtn.style.display = 'none';
-        if (addStudentBtn) addStudentBtn.style.display = 'none';
-        renderStudentPortal();
+        // Configure Navigation for Student
+        navMenu.innerHTML = `
+            <a href="#student-portal" class="nav-item active">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                <span>My Scorecard</span>
+            </a>
+            <a href="#my-grades" class="nav-item">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>Course Assessments</span>
+            </a>
+            <a href="#interventions" class="nav-item">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>Mentoring & Advice</span>
+            </a>
+        `;
+
+        // Toggle Views
+        studentPortalView.style.display = 'block';
+        cohortView.style.display = 'none';
+
+        // Toggle Action Buttons
+        syncBtn.style.display = 'none';
+        weightsBtn.style.display = 'none';
+        exportBtn.style.display = 'none';
+        addStudentBtn.style.display = 'none';
+        printStudentBtn.style.display = 'inline-flex';
+
+        // Render Student Specific Details
+        renderStudentPersonalDetails(user);
+
     } else {
-        if (studentPortalView) studentPortalView.style.display = 'none';
-        if (cohortView) cohortView.style.display = 'block';
-        if (studentPortalNav) studentPortalNav.style.display = 'none';
-        if (syncBtn) syncBtn.style.display = user.role === 'ADMIN' ? 'inline-flex' : 'none';
-        if (weightsBtn) weightsBtn.style.display = user.role === 'ADMIN' ? 'inline-flex' : 'none';
-        if (addStudentBtn) addStudentBtn.style.display = 'inline-flex';
+        // === FACULTY OR HOD/ADMIN WORKSPACE ===
+        nameEl.textContent = user.name;
+        avatarEl.textContent = role === 'ADMIN' ? 'HOD' : 'FAC';
+        badgeEl.className = 'role-pill ' + (role === 'ADMIN' ? 'admin' : 'faculty');
+        badgeEl.textContent = role === 'ADMIN' ? '👑 Admin / HOD' : '👨‍🏫 Faculty Mentor';
+
+        titleEl.textContent = role === 'ADMIN' 
+            ? 'Department Administration & Performance Analytics' 
+            : 'Faculty Cohort Evaluation & Mentoring Console';
+        subEl.textContent = 'Department of Computer Science & Engineering (CSE-R) | NIET Greater Noida';
+
+        // Configure Navigation for Faculty/Admin
+        navMenu.innerHTML = `
+            <a href="#overview" class="nav-item active" id="nav-overview">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <span>Overview KPI</span>
+            </a>
+            <a href="#at-risk" class="nav-item" id="nav-atrisk">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                <span>At-Risk Detection</span>
+                <span class="risk-count-pill" id="sidebar-risk-badge">0</span>
+            </a>
+            <a href="#students" class="nav-item" id="nav-students">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span>Student Directory</span>
+            </a>
+            <a href="#subject-analytics" class="nav-item" id="nav-subjects">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Subject Benchmarks</span>
+            </a>
+        `;
+
+        // Toggle Views
+        studentPortalView.style.display = 'none';
+        cohortView.style.display = 'block';
+
+        // Toggle Action Buttons
+        syncBtn.style.display = role === 'ADMIN' ? 'inline-flex' : 'none';
+        weightsBtn.style.display = role === 'ADMIN' ? 'inline-flex' : 'none';
+        exportBtn.style.display = 'inline-flex';
+        addStudentBtn.style.display = 'inline-flex';
+        printStudentBtn.style.display = 'none';
+
+        // Render Cohort Analytics
+        renderCohortAnalytics();
     }
 }
 
-function renderStudentPortal() {
-    const user = appDatabase.currentUser;
+// Student Personal Profile Rendering
+function renderStudentPersonalDetails(studentRaw) {
     const enriched = enrichStudentsList();
-    const student = enriched.find(s => s.erpId === user.erpId) || enriched[0];
+    const student = enriched.find(s => s.erpId === studentRaw.erpId) || studentRaw;
 
     document.getElementById('spStudentName').textContent = student.name;
     document.getElementById('spStudentMeta').textContent = `ERP: ${student.erpId} | Section: ${student.section} | Semester: ${student.semester} | NIET Greater Noida`;
-    
+
     const riskBadge = document.getElementById('spRiskBadge');
     riskBadge.textContent = student.riskLabel;
     riskBadge.className = 'badge ' + student.badgeClass;
@@ -282,9 +380,32 @@ function renderStudentPortal() {
 
     const intervUl = document.getElementById('spInterventions');
     intervUl.innerHTML = student.interventions.map(i => `<li>${escapeHtml(i)}</li>`).join('');
+
+    // Render Student Marks Table
+    const grades = appDatabase.grades[student.id] || [
+        { courseCode: 'CCSEH0355', assessment: 'Mid-Term Exam', marks: Math.round(student.averageScore * 0.45), max: 50, percentage: student.averageScore, grade: student.grade },
+        { courseCode: 'CCSEH0355', assessment: 'End-Term Exam', marks: student.averageScore, max: 100, percentage: student.averageScore, grade: student.grade },
+        { courseCode: 'CCSEH0351', assessment: 'Data Structures Lab', marks: Math.round(student.averageScore * 0.48), max: 50, percentage: student.averageScore, grade: student.grade },
+        { courseCode: 'CCSEH0351', assessment: 'End-Term Exam', marks: student.averageScore, max: 100, percentage: student.averageScore, grade: student.grade },
+    ];
+
+    const tbody = document.getElementById('spGradesTableBody');
+    if (tbody) {
+        tbody.innerHTML = grades.map(g => `
+            <tr>
+                <td><b>${escapeHtml(g.courseCode)}</b></td>
+                <td>${escapeHtml(g.assessment)}</td>
+                <td><b>${g.marks}</b> / ${g.max}</td>
+                <td>${g.percentage}%</td>
+                <td><span class="badge ${g.percentage >= 40 ? 'badge-success' : 'badge-danger'}">${g.grade}</span></td>
+                <td>${g.percentage >= 40 ? '<span style="color:#34d399;">Passed</span>' : '<span style="color:#f87171;">Backlog Risk</span>'}</td>
+            </tr>
+        `).join('');
+    }
 }
 
-function renderAllViews() {
+// Cohort Analytics Rendering (Faculty & Admin)
+function renderCohortAnalytics() {
     const enriched = enrichStudentsList();
 
     // 1. KPI Counters
@@ -304,7 +425,7 @@ function renderAllViews() {
     document.getElementById('kpi-high-risk-count').textContent = highRisk + ' Critical';
     document.getElementById('kpi-mod-risk-count').textContent = modRisk + ' Warning';
 
-    // 2. Tab Badge Counts
+    // 2. Tab Badges
     document.getElementById('count-all').textContent = total;
     document.getElementById('count-high').textContent = highRisk;
     document.getElementById('count-mod').textContent = modRisk;
@@ -312,7 +433,7 @@ function renderAllViews() {
     const sidebarBadge = document.getElementById('sidebar-risk-badge');
     if (sidebarBadge) sidebarBadge.textContent = highRisk + modRisk;
 
-    // 3. Render Table
+    // 3. Render Students Table
     renderStudentsTable(enriched);
 
     // 4. Render Charts
@@ -392,7 +513,7 @@ function renderStudentsTable(studentsList) {
     tbody.innerHTML = rowsHtml;
 }
 
-// Student Detail Modal Inspection
+// Student Detail Modal Inspection (Faculty/HOD view)
 window.openStudentDetailModal = function(studentId) {
     const enriched = enrichStudentsList();
     const s = enriched.find(x => x.id === studentId);
@@ -473,12 +594,147 @@ window.openStudentDetailModal = function(studentId) {
 
 // Event Listeners Setup
 function setupEventListeners() {
-    // Search Box
+    // 1. Role Tabs in Login Screen
+    document.querySelectorAll('.login-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.login-tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedLoginTab = btn.getAttribute('data-type');
+            updateLoginFormPlaceholders();
+        });
+    });
+
+    function updateLoginFormPlaceholders() {
+        const idLabel = document.getElementById('lblLoginIdentifier');
+        const idInput = document.getElementById('loginIdentifier');
+        const btnText = document.getElementById('loginBtnText');
+        hideLoginAlert();
+
+        if (selectedLoginTab === 'STUDENT') {
+            idLabel.textContent = 'Student Institutional ERP ID';
+            idInput.placeholder = 'e.g. NIET2021001';
+            btnText.textContent = 'Sign In to Student Portal';
+        } else if (selectedLoginTab === 'FACULTY') {
+            idLabel.textContent = 'Faculty Institutional Email';
+            idInput.placeholder = 'e.g. faculty@niet.co.in';
+            btnText.textContent = 'Sign In to Faculty Console';
+        } else {
+            idLabel.textContent = 'Department Head / Admin Email';
+            idInput.placeholder = 'e.g. hod@niet.co.in';
+            btnText.textContent = 'Sign In to Admin Gateway';
+        }
+    }
+
+    // 2. Demo Auto-Fill Buttons
+    document.getElementById('demoFillStudentGood')?.addEventListener('click', () => {
+        document.getElementById('tabStudent').click();
+        document.getElementById('loginIdentifier').value = 'NIET2021001';
+        document.getElementById('loginPassword').value = 'student123';
+        hideLoginAlert();
+    });
+
+    document.getElementById('demoFillStudentRisk')?.addEventListener('click', () => {
+        document.getElementById('tabStudent').click();
+        document.getElementById('loginIdentifier').value = 'NIET2021002';
+        document.getElementById('loginPassword').value = 'student123';
+        hideLoginAlert();
+    });
+
+    document.getElementById('demoFillFaculty')?.addEventListener('click', () => {
+        document.getElementById('tabFaculty').click();
+        document.getElementById('loginIdentifier').value = 'faculty@niet.co.in';
+        document.getElementById('loginPassword').value = 'faculty123';
+        hideLoginAlert();
+    });
+
+    document.getElementById('demoFillAdmin')?.addEventListener('click', () => {
+        document.getElementById('tabAdmin').click();
+        document.getElementById('loginIdentifier').value = 'hod@niet.co.in';
+        document.getElementById('loginPassword').value = 'admin123';
+        hideLoginAlert();
+    });
+
+    // 3. Login Form Submit
+    document.getElementById('loginForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const identifier = document.getElementById('loginIdentifier').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+        hideLoginAlert();
+
+        if (selectedLoginTab === 'STUDENT') {
+            // Check student ERP ID
+            const foundStudent = appDatabase.students.find(s => s.erpId.toUpperCase() === identifier.toUpperCase());
+            if (!foundStudent) {
+                showLoginAlert(`Invalid Student ERP ID "${identifier}". Enter an existing ERP ID like NIET2021001 or NIET2021002.`);
+                return;
+            }
+            if (password !== 'student123' && password !== '123456') {
+                showLoginAlert('Incorrect password. For testing, student password is: student123');
+                return;
+            }
+
+            // Authenticated as Student!
+            currentSession = {
+                isLoggedIn: true,
+                role: 'STUDENT',
+                user: foundStudent
+            };
+
+        } else if (selectedLoginTab === 'FACULTY') {
+            if (!identifier.toLowerCase().includes('faculty') && !identifier.toLowerCase().includes('disha')) {
+                showLoginAlert('Invalid faculty credentials. Try: faculty@niet.co.in');
+                return;
+            }
+            if (password !== 'faculty123') {
+                showLoginAlert('Incorrect password. Faculty password is: faculty123');
+                return;
+            }
+
+            // Authenticated as Faculty!
+            currentSession = {
+                isLoggedIn: true,
+                role: 'FACULTY',
+                user: { name: 'Prof. Disha Saini', email: identifier, role: 'FACULTY' }
+            };
+
+        } else if (selectedLoginTab === 'ADMIN') {
+            if (!identifier.toLowerCase().includes('hod') && !identifier.toLowerCase().includes('admin')) {
+                showLoginAlert('Invalid HOD/Admin credentials. Try: hod@niet.co.in');
+                return;
+            }
+            if (password !== 'admin123') {
+                showLoginAlert('Incorrect password. HOD Admin password is: admin123');
+                return;
+            }
+
+            // Authenticated as Admin!
+            currentSession = {
+                isLoggedIn: true,
+                role: 'ADMIN',
+                user: { name: 'Dr. HOD (Admin)', email: identifier, role: 'ADMIN' }
+            };
+        }
+
+        // Save session and unlock workspace
+        sessionStorage.setItem('niet_active_session', JSON.stringify(currentSession));
+        showAppWorkspace();
+    });
+
+    // 4. Logout Buttons
+    document.getElementById('btnLogoutSidebar')?.addEventListener('click', logoutUser);
+    document.getElementById('btnLogoutTop')?.addEventListener('click', logoutUser);
+
+    // 5. Student Marksheet Print
+    document.getElementById('btnPrintStudentReport')?.addEventListener('click', () => {
+        window.print();
+    });
+
+    // 6. Search Box
     document.getElementById('searchInput')?.addEventListener('input', () => {
         renderStudentsTable(enrichStudentsList());
     });
 
-    // Tab Filters
+    // 7. Tab Filters
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -488,7 +744,7 @@ function setupEventListeners() {
         });
     });
 
-    // Client-Side CSV Export
+    // 8. Client-Side CSV Export
     document.getElementById('btn-export-csv')?.addEventListener('click', () => {
         const enriched = enrichStudentsList();
         if (!enriched.length) return;
@@ -504,7 +760,7 @@ function setupEventListeners() {
         a.click();
     });
 
-    // Add Student Modal Handlers
+    // 9. Add Student Modal
     const addModal = document.getElementById('addStudentModal');
     document.getElementById('btn-add-student-modal')?.addEventListener('click', () => addModal.classList.add('open'));
     document.getElementById('addModalCloseBtn')?.addEventListener('click', () => addModal.classList.remove('open'));
@@ -526,66 +782,16 @@ function setupEventListeners() {
         saveDatabase();
         addModal.classList.remove('open');
         document.getElementById('addStudentForm').reset();
-        initApp();
-        alert(`Student record for ${newStudent.name} (${newStudent.erpId}) successfully saved to persistent database!`);
+        renderCohortAnalytics();
+        alert(`Student record for ${newStudent.name} (${newStudent.erpId}) registered in cohort database!`);
     });
 
-    // Inspect Modal Close Handlers
+    // 10. Inspect Modal Close Handlers
     const detailModal = document.getElementById('detailModal');
     document.getElementById('modalCloseBtn')?.addEventListener('click', () => detailModal.classList.remove('open'));
     document.getElementById('modalDoneBtn')?.addEventListener('click', () => detailModal.classList.remove('open'));
 
-    // Authentication / RBAC Switcher Handlers
-    const authModal = document.getElementById('authModal');
-    document.getElementById('btnSwitchRole')?.addEventListener('click', () => authModal.classList.add('open'));
-    document.getElementById('authModalCloseBtn')?.addEventListener('click', () => authModal.classList.remove('open'));
-
-    // Quick 1-Click Demo Login Handlers
-    document.getElementById('btnDemoHod')?.addEventListener('click', () => {
-        appDatabase.currentUser = { role: 'ADMIN', name: 'Dr. HOD (Admin)', email: 'hod.cse@niet.co.in', avatar: 'HOD', erpId: null };
-        saveDatabase();
-        authModal.classList.remove('open');
-        initApp();
-    });
-
-    document.getElementById('btnDemoFaculty')?.addEventListener('click', () => {
-        appDatabase.currentUser = { role: 'FACULTY', name: 'Prof. Disha Saini (Faculty)', email: 'disha.saini@niet.co.in', avatar: 'DS', erpId: null };
-        saveDatabase();
-        authModal.classList.remove('open');
-        initApp();
-    });
-
-    document.getElementById('btnDemoStudent')?.addEventListener('click', () => {
-        appDatabase.currentUser = { role: 'STUDENT', name: 'Aarav Sharma (Student)', email: 'aarav.sharma@niet.co.in', avatar: 'AS', erpId: 'NIET2021001' };
-        saveDatabase();
-        authModal.classList.remove('open');
-        initApp();
-    });
-
-    // Auth Form Submit
-    document.getElementById('authLoginForm')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const username = document.getElementById('authUsername').value.trim();
-        let role = 'ADMIN';
-        let name = 'Dr. HOD (Admin)';
-        let erpId = null;
-
-        if (username.toLowerCase().includes('student')) {
-            role = 'STUDENT';
-            name = 'Aarav Sharma (Student)';
-            erpId = 'NIET2021001';
-        } else if (username.toLowerCase().includes('faculty') || username.toLowerCase().includes('disha')) {
-            role = 'FACULTY';
-            name = 'Prof. Disha Saini (Faculty)';
-        }
-
-        appDatabase.currentUser = { role, name, email: username, avatar: name.substring(0, 2).toUpperCase(), erpId };
-        saveDatabase();
-        authModal.classList.remove('open');
-        initApp();
-    });
-
-    // NIET iCloudEMS Sync Gateway Handlers
+    // 11. NIET iCloudEMS Sync Handlers
     const erpModal = document.getElementById('erpSyncModal');
     document.getElementById('btn-sync-erp')?.addEventListener('click', () => {
         erpModal.classList.add('open');
@@ -629,7 +835,6 @@ function setupEventListeners() {
         progressBar.style.width = '90%';
         await sleep(600);
 
-        // Add an extra student if not already present
         if (!appDatabase.students.some(s => s.erpId === 'NIET2021013')) {
             appDatabase.students.push({
                 id: 's013',
@@ -647,14 +852,14 @@ function setupEventListeners() {
         appendLog('✓ Synchronization Complete: Database successfully committed.', 'success');
         await sleep(400);
 
-        initApp();
+        renderCohortAnalytics();
         setTimeout(() => {
             erpModal.classList.remove('open');
             alert('NIET iCloudEMS Batch Synchronization Completed Successfully! Cohort database updated.');
         }, 1000);
     });
 
-    // Dynamic Risk Weights Modal Handlers
+    // 12. Dynamic Risk Weights
     const weightsModal = document.getElementById('configWeightsModal');
     document.getElementById('btn-config-weights')?.addEventListener('click', () => {
         document.getElementById('sliderAtt').value = appDatabase.weights.attendance;
@@ -695,9 +900,20 @@ function setupEventListeners() {
         appDatabase.weights = { attendance: a, academic: b, backlog: c };
         saveDatabase();
         weightsModal.classList.remove('open');
-        initApp();
+        renderCohortAnalytics();
         alert('Risk Algorithm weights updated! All cohort risk evaluations recalculated.');
     });
+}
+
+function showLoginAlert(msg) {
+    const alertBox = document.getElementById('loginAlertBox');
+    alertBox.textContent = msg;
+    alertBox.style.display = 'block';
+}
+
+function hideLoginAlert() {
+    const alertBox = document.getElementById('loginAlertBox');
+    alertBox.style.display = 'none';
 }
 
 function sleep(ms) {
