@@ -757,13 +757,41 @@ function setupEventListeners() {
         showAppWorkspace();
     });
 
-    // 4. Logout Buttons
+    // 4. Sidebar Navigation Links (Active Toggle & Smooth Scroll)
+    const sideNav = document.getElementById('sideNavMenu');
+    sideNav?.addEventListener('click', (e) => {
+        const link = e.target.closest('.nav-item');
+        if (!link) return;
+
+        e.preventDefault();
+        const targetId = link.getAttribute('href')?.replace('#', '');
+        if (!targetId) return;
+
+        // Update active class on nav items
+        sideNav.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        link.classList.add('active');
+
+        // Scroll to the targeted section
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            targetEl.classList.remove('section-pulse-highlight');
+            void targetEl.offsetWidth; // Force DOM reflow
+            targetEl.classList.add('section-pulse-highlight');
+        }
+    });
+
+    // 5. Logout Buttons
     document.getElementById('btnLogoutSidebar')?.addEventListener('click', logoutUser);
     document.getElementById('btnLogoutTop')?.addEventListener('click', logoutUser);
 
-    // 5. Student Marksheet Print
+    // 6. Student Mentoring & Marksheet Print Handlers
     document.getElementById('btnPrintStudentReport')?.addEventListener('click', () => {
         window.print();
+    });
+
+    document.getElementById('btnBookMentoringSlot')?.addEventListener('click', () => {
+        alert('📅 Mentoring Appointment Request submitted!\n\nFaculty Proctor: Prof. Disha Saini\nDesignated Remedial Hours: Tuesdays & Thursdays (4:00 PM - 5:30 PM)\nLocation: Academic Block, Cabin 304.\nConfirmation copy sent to your institutional email.');
     });
 
     // 6. Search Box

@@ -273,42 +273,73 @@
                     </div>
                 </div>
 
-                <div class="sp-grid">
-                    <div class="sp-card">
-                        <h4>Attendance Tracking</h4>
-                        <div class="sp-metric" id="spAttendanceVal">88%</div>
-                        <div class="mini-progress"><div class="mini-progress-fill fill-emerald" id="spAttendanceBar" style="width: 88%;"></div></div>
-                        <small id="spAttendanceMsg">Safe: Above 75% mandatory university threshold.</small>
-                    </div>
-                    <div class="sp-card">
-                        <h4>Current Academic Average</h4>
-                        <div class="sp-metric text-blue" id="spScoreVal">82%</div>
-                        <small>Letter Grade Projection: <b id="spGradeVal">A+</b></small>
-                    </div>
-                    <div class="sp-card">
-                        <h4>Evaluated Risk Index</h4>
-                        <div class="sp-metric" id="spRiskScoreVal">0</div>
-                        <small>Scale: 0 (Good Standing) to 100 (Critical)</small>
-                    </div>
-                </div>
-
-                <div class="sp-details-row">
-                    <div class="sp-box danger-box">
-                        <h5>⚠️ Identified Risk Factors</h5>
-                        <ul id="spRiskFactors"><li>No critical factors identified. Keep up the good work!</li></ul>
-                    </div>
-                    <div class="sp-box success-box">
-                        <h5>🎯 Personalized Academic Guidance & Interventions</h5>
-                        <ul id="spInterventions"><li>Continue regular lab participation and project submissions.</li></ul>
+                <!-- 1. My Scorecard Section -->
+                <div class="student-section-anchor" id="student-portal">
+                    <div class="sp-grid">
+                        <div class="sp-card">
+                            <h4>Attendance Tracking</h4>
+                            <div class="sp-metric" id="spAttendanceVal">88%</div>
+                            <div class="mini-progress"><div class="mini-progress-fill fill-emerald" id="spAttendanceBar" style="width: 88%;"></div></div>
+                            <small id="spAttendanceMsg">Safe: Above 75% mandatory university threshold.</small>
+                        </div>
+                        <div class="sp-card">
+                            <h4>Current Academic Average</h4>
+                            <div class="sp-metric text-blue" id="spScoreVal">82%</div>
+                            <small>Letter Grade Projection: <b id="spGradeVal">A+</b></small>
+                        </div>
+                        <div class="sp-card">
+                            <h4>Evaluated Risk Index</h4>
+                            <div class="sp-metric" id="spRiskScoreVal">0</div>
+                            <small>Scale: 0 (Good Standing) to 100 (Critical)</small>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Student Subject Marks Table -->
-                <div class="sp-grades-box glass-panel" style="margin-top: 24px;">
+                <!-- 2. Mentoring & Advice Section -->
+                <div class="student-section-anchor" id="interventions" style="margin-top: 24px;">
+                    <div class="sp-details-row">
+                        <div class="sp-box danger-box">
+                            <h5>⚠️ Identified Risk Factors</h5>
+                            <ul id="spRiskFactors"><li>No critical factors identified. Keep up the good work!</li></ul>
+                        </div>
+                        <div class="sp-box success-box">
+                            <h5>🎯 Personalized Academic Guidance & Interventions</h5>
+                            <ul id="spInterventions"><li>Continue regular lab participation and project submissions.</li></ul>
+                        </div>
+                    </div>
+
+                    <!-- Mentor Direct Contact & Appointment Card -->
+                    <div class="mentor-contact-card glass-panel" style="margin-top: 16px; padding: 18px 20px; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; background: rgba(56, 189, 248, 0.04);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                            <div style="display: flex; align-items: center; gap: 14px;">
+                                <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #6366f1); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px;">DS</div>
+                                <div>
+                                    <h4 style="margin: 0; color: #fff; font-size: 15px;">Faculty Proctor & Mentor: Prof. Disha Saini</h4>
+                                    <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 12px;">Department of Computer Science & Engineering (CSE-R) | Cabin 304, Academic Block</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <a href="mailto:disha.saini@niet.co.in" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px; text-decoration: none;">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                    <span>Email Mentor</span>
+                                </a>
+                                <button type="button" class="btn btn-primary" id="btnBookMentoringSlot" style="padding: 8px 14px; font-size: 12px;">
+                                    <span>Schedule Proctor Review</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Course Assessments Section -->
+                <div class="student-section-anchor sp-grades-box glass-panel" id="my-grades" style="margin-top: 24px;">
                     <div class="table-header-row" style="padding: 16px 20px;">
                         <div>
                             <h4 style="color: #fff; font-size: 16px; margin: 0;">My Course Assessments & Examination Marks</h4>
-                            <p class="chart-subtitle" style="margin: 2px 0 0 0;">Semester 5 Registered Core Courses</p>
+                            <p class="chart-subtitle" style="margin: 2px 0 0 0;">Semester 5 Registered Core Courses (CCSEH0355, CCSEH0351)</p>
+                        </div>
+                        <div>
+                            <span class="sub-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 11px; padding: 4px 10px; border-radius: 999px;">Official Examination Records</span>
                         </div>
                     </div>
                     <div class="table-responsive">
