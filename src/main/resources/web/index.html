@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <!-- Chart.js for interactive analytics charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF for official Debarment & Report Card PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -130,6 +132,14 @@
                             <span id="loginBtnText">Sign In to Student Portal</span>
                             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                         </button>
+
+                        <!-- Student Self-Registration Link -->
+                        <div class="examly-register-link-row" style="text-align: center; margin-top: 14px;">
+                            <a href="javascript:void(0)" id="linkOpenRegisterModal" style="color: #38bdf8; font-size: 13px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                <span>🎓 New Student? Register with Academic Profile</span>
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a>
+                        </div>
                     </form>
 
                     <!-- Evaluator Quick Fill Pills -->
@@ -293,40 +303,80 @@
                             <small>Scale: 0 (Good Standing) to 100 (Critical)</small>
                         </div>
                     </div>
+
+                    <!-- FEATURE 1: "Bunk vs Attend" Target Calculator -->
+                    <div class="target-calc-card glass-panel" id="targetCalcCard" style="margin-top: 20px; padding: 22px; border-radius: 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                            <div style="flex: 1; min-width: 260px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                    <span style="font-size: 22px;">🎯</span>
+                                    <h4 style="margin: 0; color: #fff; font-size: 16px; font-weight: 600;">"Bunk vs Attend" Target Calculator</h4>
+                                    <span class="badge" id="calcTargetBadge">Calculating...</span>
+                                </div>
+                                <p style="margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.5;" id="calcSummaryMsg">
+                                    Dynamically tracking consecutive classes required for NIET 75% minimum attendance rule...
+                                </p>
+                            </div>
+                            <div class="calc-metrics-row" style="display: flex; gap: 18px; align-items: center;">
+                                <div class="calc-metric-box" style="text-align: right; background: rgba(255,255,255,0.03); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Current Tracking</span>
+                                    <b id="calcHeldAttended" style="font-size: 16px; color: #38bdf8;">-- / -- Held</b>
+                                </div>
+                                <div class="calc-metric-box" style="text-align: right; background: rgba(255,255,255,0.03); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Consecutive Target</span>
+                                    <b id="calcTargetAction" style="font-size: 16px; color: #10b981;">--</b>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 2. Mentoring & Advice Section -->
                 <div class="student-section-anchor" id="interventions" style="margin-top: 24px;">
-                    <div class="sp-details-row">
-                        <div class="sp-box danger-box">
-                            <h5>⚠️ Identified Risk Factors</h5>
-                            <ul id="spRiskFactors"><li>No critical factors identified. Keep up the good work!</li></ul>
+                    <!-- FEATURE 2: Automated Remedial Action Plan (Dynamic Guidance) -->
+                    <div class="remedial-section-wrap">
+                        <div class="table-header-row" style="padding: 0 0 12px 0;">
+                            <div>
+                                <h4 style="color: #fff; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <span>⚡</span> Automated Remedial Action Plan (Dynamic Guidance)
+                                </h4>
+                                <p class="chart-subtitle" style="margin: 2px 0 0 0;">Rule-based intervention cards triggered automatically by attendance, internal marks, and university backlogs</p>
+                            </div>
                         </div>
-                        <div class="sp-box success-box">
-                            <h5>🎯 Personalized Academic Guidance & Interventions</h5>
-                            <ul id="spInterventions"><li>Continue regular lab participation and project submissions.</li></ul>
+                        <div id="spRemedialCardsContainer" class="remedial-cards-container">
+                            <!-- Populated dynamically by app.js based on rules -->
                         </div>
                     </div>
 
-                    <!-- Mentor Direct Contact & Appointment Card -->
-                    <div class="mentor-contact-card glass-panel" style="margin-top: 16px; padding: 18px 20px; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; background: rgba(56, 189, 248, 0.04);">
+                    <!-- Mentor Direct Contact & Appointment Card (FEATURE 3) -->
+                    <div class="mentor-contact-card glass-panel" style="margin-top: 20px; padding: 18px 20px; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; background: rgba(56, 189, 248, 0.04);">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
                             <div style="display: flex; align-items: center; gap: 14px;">
-                                <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #6366f1); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px;">DS</div>
+                                <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #6366f1); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px;" id="mentorInitials">DS</div>
                                 <div>
-                                    <h4 style="margin: 0; color: #fff; font-size: 15px;">Faculty Proctor & Mentor: Prof. Disha Saini</h4>
-                                    <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 12px;">Department of Computer Science & Engineering (CSE-R) | Cabin 304, Academic Block</p>
+                                    <h4 style="margin: 0; color: #fff; font-size: 15px;" id="mentorNameDisplay">Faculty Proctor & Mentor: Prof. Disha Saini</h4>
+                                    <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 12px;" id="mentorMetaDisplay">Department of Computer Science & Engineering (CSE-R) | Cabin 304, Academic Block</p>
                                 </div>
                             </div>
                             <div style="display: flex; gap: 10px;">
-                                <a href="mailto:disha.saini@niet.co.in" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px; text-decoration: none;">
+                                <a href="mailto:faculty@niet.co.in" id="linkEmailMentor" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px; text-decoration: none;">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                                     <span>Email Mentor</span>
                                 </a>
                                 <button type="button" class="btn btn-primary" id="btnBookMentoringSlot" style="padding: 8px 14px; font-size: 12px;">
-                                    <span>Schedule Proctor Review</span>
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                    <span>Schedule Meeting with Proctor</span>
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- My Scheduled Appointments Section -->
+                        <div id="studentAppointmentsWrap" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h5 style="margin: 0; color: #cbd5e1; font-size: 13px; font-weight: 600;">My Proctor Appointments History:</h5>
+                                <span class="sub-badge" id="studentAppointmentsCount" style="font-size: 11px;">0 Scheduled</span>
+                            </div>
+                            <div id="studentAppointmentsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
                         </div>
                     </div>
                 </div>
@@ -456,8 +506,51 @@
                     </div>
                 </section>
 
+                <!-- FEATURE 5: CSV / Excel Bulk Upload for Faculty -->
+                <section class="bulk-upload-section glass-panel" style="margin-top: 24px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 16px; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                <span>📂</span> Bulk Ingest Class Marks Sheet (.csv / .xlsx)
+                            </h3>
+                            <p class="chart-subtitle" style="margin: 2px 0 0 0;">
+                                Ingest batch spreadsheet (Roll No, Name, ERP ID, Section, Total Classes, Attended, Marks %, Backlogs) to auto-trigger 40/40/20 cohort risk calculation
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnDownloadCsvSample">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                <span>Download CSV Sample</span>
+                            </button>
+                            <button type="button" class="btn btn-primary btn-sm" id="btnBrowseCsvFile">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                <span>Select Spreadsheet File</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="drop-zone" id="bulkUploadDropZone" style="border: 2px dashed rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 28px; text-align: center; cursor: pointer; transition: all 0.2s ease; background: rgba(56, 189, 248, 0.02);">
+                        <input type="file" id="bulkUploadFileInput" accept=".csv, .xlsx, .xls" style="display: none;">
+                        <div class="drop-zone-content">
+                            <div style="width: 50px; height: 50px; margin: 0 auto 10px auto; border-radius: 50%; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; justify-content: center;">
+                                <svg width="28" height="28" fill="none" stroke="#38bdf8" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <h4 style="margin: 0; color: #fff; font-size: 14px;">Drop class marks sheet (.csv or .xlsx) here</h4>
+                            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Auto-parses Roll No, Name, ERP ID, Section, Held, Attended, Marks %, Backlogs</p>
+                        </div>
+                        <div id="bulkUploadProgress" style="display: none; margin-top: 14px; max-width: 400px; margin-left: auto; margin-right: auto;">
+                            <div class="mini-progress" style="height: 8px;"><div class="mini-progress-fill fill-emerald" id="bulkUploadBar" style="width: 0%; transition: width 0.3s ease;"></div></div>
+                            <small id="bulkUploadStatus" style="color: #38bdf8; display: block; margin-top: 6px; font-weight: 500;">Ingesting into Supabase...</small>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Students Directory Table Section -->
-                <section class="table-section glass-panel" id="students">
+                <section class="table-section glass-panel" id="students" style="margin-top: 24px;">
                     <div class="table-header-row">
                         <div class="table-title">
                             <h3>All Cohort Students Directory</h3>
@@ -465,6 +558,12 @@
                         </div>
                         
                         <div class="table-controls">
+                            <!-- FEATURE 4: Debarment PDF Export -->
+                            <button class="btn btn-danger btn-sm" id="btnExportDebarmentPdf" style="display: inline-flex; align-items: center; gap: 6px;" title="Export official NIET notice for students with attendance < 75%">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                                <span>Export Debarment Notice (PDF)</span>
+                            </button>
+
                             <div class="search-box">
                                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                 <input type="text" id="searchInput" placeholder="Search by name or ERP ID...">
@@ -495,6 +594,41 @@
                             </thead>
                             <tbody id="studentsTableBody">
                                 <!-- Populated dynamically by app.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- FEATURE 3: Faculty Pending Proctor & Mentoring Requests Queue -->
+                <section class="table-section glass-panel" id="proctor-queue" style="margin-top: 24px;">
+                    <div class="table-header-row">
+                        <div class="table-title">
+                            <h3 style="display: flex; align-items: center; gap: 8px;">
+                                <span>💬</span> Pending Student Proctor & Mentoring Requests
+                            </h3>
+                            <p class="chart-subtitle">Real-time queue of student appointment requests stored in Supabase with acknowledge & resolve actions</p>
+                        </div>
+                        <div>
+                            <span class="sub-badge" id="pendingAppointmentsBadge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 12px; padding: 4px 12px; border-radius: 999px;">0 Pending Requests</span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Section</th>
+                                    <th>Attendance</th>
+                                    <th>Request Reason</th>
+                                    <th>Subject & Notes</th>
+                                    <th>Preferred Date</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="facultyAppointmentsTableBody">
+                                <!-- Populated dynamically by app.js from /api/appointments -->
                             </tbody>
                         </table>
                     </div>
@@ -632,6 +766,196 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="modalDoneBtn">Done</button>
                 <button class="btn btn-primary" id="modalPrintBtn">Generate Official Report Card</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STUDENT SELF-REGISTRATION MODAL -->
+    <div class="modal-overlay" id="studentRegisterModal">
+        <div class="modal-card glass-panel" style="max-width: 600px;">
+            <div class="modal-header">
+                <div>
+                    <h3 style="margin: 0; color: #fff;">🎓 Student Institutional Registration</h3>
+                    <p class="chart-subtitle" style="margin: 2px 0 0 0;">Create your persistent Supabase account and enter initial academic metrics</p>
+                </div>
+                <button class="modal-close" id="regModalCloseBtn">&times;</button>
+            </div>
+            <form id="studentRegisterForm" class="modal-form" style="padding: 20px;">
+                <div id="regAlertBox" class="login-alert" style="display: none; margin-bottom: 14px;"></div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Full Student Name *</label>
+                        <input type="text" id="regName" class="form-input" placeholder="e.g. Harsh Goyal" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Institutional Email *</label>
+                        <input type="email" id="regEmail" class="form-input" placeholder="e.g. harsh.goyal@niet.co.in" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Institutional ERP ID *</label>
+                        <input type="text" id="regErp" class="form-input" placeholder="e.g. NIET2021015" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>University Roll Number *</label>
+                        <input type="text" id="regRoll" class="form-input" placeholder="e.g. 2101330100099" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Section</label>
+                        <input type="text" id="regSection" class="form-input" value="CSE-R-A" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Semester</label>
+                        <input type="number" id="regSem" class="form-input" value="5" min="1" max="8" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Create Password *</label>
+                        <input type="password" id="regPassword" class="form-input" placeholder="Min 6 characters" minlength="6" required>
+                    </div>
+                </div>
+
+                <div style="background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 12px; margin: 10px 0 16px 0;">
+                    <span style="display: block; font-size: 12px; font-weight: 600; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Initial Academic Metrics (Auto-Triggers Risk Engine)</span>
+                    <div class="form-row" style="margin: 0; gap: 10px;">
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label style="font-size: 11px;">Classes Held</label>
+                            <input type="number" id="regHeld" class="form-input" value="60" min="1" required>
+                        </div>
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label style="font-size: 11px;">Attended</label>
+                            <input type="number" id="regAttended" class="form-input" value="50" min="0" required>
+                        </div>
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label style="font-size: 11px;">Internal Marks %</label>
+                            <input type="number" id="regMarks" class="form-input" value="75" min="0" max="100" required>
+                        </div>
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label style="font-size: 11px;">Backlogs</label>
+                            <input type="number" id="regBacklogs" class="form-input" value="0" min="0" max="10" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary" id="regCancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitRegister">
+                        <span>Complete Registration & Launch Portal</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FEATURE 3: PROCTOR MEETING SCHEDULER MODAL -->
+    <div class="modal-overlay" id="proctorMeetingModal">
+        <div class="modal-card glass-panel" style="max-width: 520px;">
+            <div class="modal-header">
+                <div>
+                    <h3 style="margin: 0; color: #fff;">📅 Schedule Meeting with Proctor</h3>
+                    <p class="chart-subtitle" style="margin: 2px 0 0 0;">Connect directly with your assigned faculty mentor</p>
+                </div>
+                <button class="modal-close" id="meetingModalCloseBtn">&times;</button>
+            </div>
+            <form id="proctorMeetingForm" class="modal-form" style="padding: 20px;">
+                <div id="meetingAlertBox" class="login-alert" style="display: none; margin-bottom: 12px;"></div>
+
+                <div class="form-group">
+                    <label>Assigned Proctor</label>
+                    <input type="text" class="form-input" value="Prof. Disha Saini (disha.saini@niet.co.in) - CSE-R" readonly style="opacity: 0.8; cursor: not-allowed;">
+                </div>
+
+                <div class="form-group">
+                    <label>Meeting Subject *</label>
+                    <input type="text" id="meetSubject" class="form-input" placeholder="e.g. Attendance Shortage Recovery Guidance" required value="Attendance & Academic Review">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Reason Category *</label>
+                        <select id="meetReason" class="form-input" required>
+                            <option value="Attendance Shortage">Attendance Shortage</option>
+                            <option value="Academic Doubt">Academic Doubt</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Preferred Date *</label>
+                        <input type="date" id="meetDate" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Discussion Details / Questions for Mentor</label>
+                    <textarea id="meetNotes" class="form-input" rows="3" placeholder="Briefly describe what you would like to discuss (e.g. medical leave submission, Java OOPs doubt clearing)..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="meetCancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitAppointment">
+                        <span>Confirm & Send to Proctor</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FEATURE 2: CURATED STUDY RESOURCES MODAL -->
+    <div class="modal-overlay" id="studyResourcesModal">
+        <div class="modal-card glass-panel" style="max-width: 650px;">
+            <div class="modal-header">
+                <div>
+                    <h3 style="margin: 0; color: #fff;">📚 Java OOPs (CCSEH0355) Remedial Resources</h3>
+                    <p class="chart-subtitle" style="margin: 2px 0 0 0;">Unit-wise Previous Year Question banks, video playlists, and sample code</p>
+                </div>
+                <button class="modal-close" id="studyModalCloseBtn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <strong style="color: #38bdf8;">Official NIET Mid-Term & End-Term PYQs (2022-2025)</strong>
+                            <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 12px;">Includes solved questions on Inheritance, Polymorphism, Exception Handling & Streams</p>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnDownloadPyqPdf">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span>Download PYQ PDF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <h4 style="color: #fff; font-size: 14px; margin-bottom: 10px;">Curated Video Playlist Modules:</h4>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <a href="https://www.youtube.com/results?search_query=java+oops+complete+course+one+shot" target="_blank" class="resource-link-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; text-decoration: none; color: #f8fafc; transition: all 0.2s;">
+                        <div>
+                            <strong style="font-size: 13px;">Unit 1 & 2: OOP Fundamentals, Classes & Objects, Inheritance</strong>
+                            <span style="display: block; font-size: 11px; color: #94a3b8;">NPTEL / Gate Smashers Video Lecture Series (45 mins)</span>
+                        </div>
+                        <span style="color: #38bdf8; font-size: 13px;">Watch Video &rarr;</span>
+                    </a>
+                    <a href="https://www.youtube.com/results?search_query=java+interfaces+abstract+classes+tutorial" target="_blank" class="resource-link-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; text-decoration: none; color: #f8fafc; transition: all 0.2s;">
+                        <div>
+                            <strong style="font-size: 13px;">Unit 3: Polymorphism, Interfaces & Abstract Classes</strong>
+                            <span style="display: block; font-size: 11px; color: #94a3b8;">Detailed Conceptual Walkthrough with Practical Examples</span>
+                        </div>
+                        <span style="color: #38bdf8; font-size: 13px;">Watch Video &rarr;</span>
+                    </a>
+                    <a href="https://www.youtube.com/results?search_query=java+exception+handling+multithreading" target="_blank" class="resource-link-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; text-decoration: none; color: #f8fafc; transition: all 0.2s;">
+                        <div>
+                            <strong style="font-size: 13px;">Unit 4 & 5: Exception Handling, Multi-threading & Collections</strong>
+                            <span style="display: block; font-size: 11px; color: #94a3b8;">Lab Code Walkthrough & High-Frequency Exam Problems</span>
+                        </div>
+                        <span style="color: #38bdf8; font-size: 13px;">Watch Video &rarr;</span>
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 14px 20px;">
+                <button class="btn btn-secondary" id="studyModalDoneBtn">Close</button>
             </div>
         </div>
     </div>

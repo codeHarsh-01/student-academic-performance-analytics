@@ -364,7 +364,7 @@ async function fetchStudentProfileFromApi() {
         if (res.ok) {
             const data = await res.json();
             if (data.student) {
-                renderStudentPersonalDetails(data.student, data.grades);
+                renderStudentPersonalDetails(data.student, data.targetCalculator, data.remedialPlan, data.appointments, data.grades);
             }
         }
     } catch (e) {
@@ -389,13 +389,15 @@ async function fetchCohortAnalyticsFromApi() {
                 renderCohortAnalytics();
             }
         }
+        // Also fetch faculty appointments queue
+        fetchFacultyAppointments();
     } catch (e) {
         console.warn('Live cohort fetch fallback:', e);
     }
 }
 
 // Student Personal Profile Rendering
-function renderStudentPersonalDetails(studentRaw) {
+function renderStudentPersonalDetails(studentRaw, targetCalc, remedialPlan, appointments, apiGrades) {
     const enriched = enrichStudentsList();
     let student = enriched.find(s => s.erpId?.toUpperCase() === studentRaw.erpId?.toUpperCase()) || studentRaw;
     if (!student.riskFactors || !student.interventions) {
@@ -413,7 +415,7 @@ function renderStudentPersonalDetails(studentRaw) {
     }
 
     document.getElementById('spStudentName').textContent = student.name || 'Student';
-    document.getElementById('spStudentMeta').textContent = `ERP: ${student.erpId || '--'} | Section: ${student.section || 'CSE-R'} | Semester: ${student.semester || 5} | NIET Greater Noida`;
+    document.getElementById('spStudentMeta').textContent = `ERP: ${student.erpId || '--'} | Roll: ${student.rollNumber || '--'} | Section: ${student.section || 'CSE-R'} | Semester: ${student.semester || 5} | NIET Greater Noida`;
 
     const riskBadge = document.getElementById('spRiskBadge');
     if (riskBadge) {
@@ -428,25 +430,227 @@ function renderStudentPersonalDetails(studentRaw) {
 
     document.getElementById('spAttendanceMsg').textContent = student.attendance >= 75 
         ? 'Safe: Above 75% mandatory university threshold.' 
-        : `⚠️ Critical shortage: Below 75% minimum threshold (${75 - student.attendance}% deficit)`;
+        : `⚠️ Critical shortage: Below 75% minimum threshold (${(75 - student.attendance).toFixed(1)}% deficit)`;
 
     document.getElementById('spScoreVal').textContent = student.averageScore + '%';
     document.getElementById('spGradeVal').textContent = student.grade;
     document.getElementById('spRiskScoreVal').textContent = student.riskScore;
 
-    const factorsUl = document.getElementById('spRiskFactors');
-    factorsUl.innerHTML = student.riskFactors.map(f => `<li>${escapeHtml(f)}</li>`).join('');
+    // ============================================================
+    // FEATURE 1: Render Target Calculator Card
+    // ============================================================
+    const totalClasses = student.totalClassesHeld || 60;
+    const attendedClasses = student.classesAttended || Math.round(totalClasses * (student.attendance / 100));
 
-    const intervUl = document.getElementById('spInterventions');
-    intervUl.innerHTML = student.interventions.map(i => `<li>${escapeHtml(i)}</li>`).join('');
+    // Dynamic Calculation if not directly passed from API
+    if (!targetCalc) {
+        if (student.attendance < 75.0) {
+            const needed = Math.max(1, Math.ceil((0.75 * totalClasses - attendedClasses) / 0.25));
+            targetCalc = {
+                isShortage: true,
+                classesToAttend: needed,
+                bunkBuffer: 0,
+                summaryMessage: `You are currently below 75%. You must attend the next ${needed} consecutive class${needed > 1 ? 'es' : ''} to enter the safe zone.`,
+                badgeText: `Must attend ${needed} class${needed > 1 ? 'es' : ''}`,
+                badgeColor: 'rose'
+            };
+        } else {
+            const safeBunk = Math.max(0, Math.floor((attendedClasses - 0.75 * totalClasses) / 0.75));
+            targetCalc = {
+                isShortage: false,
+                classesToAttend: 0,
+                bunkBuffer: safeBunk,
+                summaryMessage: safeBunk > 0
+                    ? `You can safely miss up to ${safeBunk} upcoming class${safeBunk > 1 ? 'es' : ''} while maintaining at least 75% attendance.`
+                    : `Your attendance is exactly on the 75% threshold. Do not miss upcoming lectures.`,
+                badgeText: safeBunk > 0 ? `Safe to miss ${safeBunk} class${safeBunk > 1 ? 'es' : ''}` : 'On 75% border',
+                badgeColor: 'emerald'
+            };
+        }
+    }
+
+    const calcBadge = document.getElementById('calcTargetBadge');
+    const calcHeldAtt = document.getElementById('calcHeldAttended');
+    const calcAction = document.getElementById('calcTargetAction');
+    const calcActionPill = calcAction?.closest('.calc-stat-pill');
+    const calcMsg = document.getElementById('calcSummaryMsg');
+
+    if (calcBadge) {
+        calcBadge.textContent = targetCalc.badgeText;
+        calcBadge.className = 'badge ' + (targetCalc.isShortage ? 'badge-danger' : 'badge-success');
+    }
+    if (calcHeldAtt) {
+        calcHeldAtt.textContent = `${attendedClasses} / ${totalClasses} Classes`;
+    }
+    if (calcAction) {
+        if (targetCalc.isShortage) {
+            calcAction.textContent = `Must attend ${targetCalc.classesToAttend} consecutive classes`;
+            calcAction.style.color = '#f43f5e';
+            if (calcActionPill) calcActionPill.className = 'calc-stat-pill action-pill danger';
+        } else {
+            calcAction.textContent = targetCalc.bunkBuffer > 0 
+                ? `Safe to miss ${targetCalc.bunkBuffer} classes` 
+                : 'Maintain 100% attendance';
+            calcAction.style.color = '#10b981';
+            if (calcActionPill) calcActionPill.className = 'calc-stat-pill action-pill';
+        }
+    }
+    if (calcMsg) {
+        calcMsg.textContent = targetCalc.summaryMessage;
+    }
+
+    // ============================================================
+    // FEATURE 2: Render Dynamic Remedial Guidance Cards
+    // ============================================================
+    const remedialContainer = document.getElementById('spRemedialCardsContainer');
+    if (remedialContainer) {
+        const items = (remedialPlan && remedialPlan.guidanceItems && remedialPlan.guidanceItems.length) 
+            ? remedialPlan.guidanceItems 
+            : [];
+
+        if (!items.length) {
+            if (student.attendance < 75.0) {
+                items.push({
+                    type: 'ATTENDANCE_DEFICIT',
+                    severity: student.attendance < 60.0 ? 'CRITICAL' : 'WARNING',
+                    title: 'Mandatory Proctor Medical/Attendance Exemption Required',
+                    description: `Your attendance is ${student.attendance}% (${(75.0 - student.attendance).toFixed(1)}% deficit). Download and submit official medical / proctor leave exemption form.`,
+                    actionText: 'Download Exemption Template (PDF)'
+                });
+            }
+            if (student.averageScore < 50.0) {
+                items.push({
+                    type: 'ACADEMIC_REMEDIAL',
+                    severity: 'WARNING',
+                    title: 'Java OOPs (CCSEH0355) Remedial PYQs & Study Material',
+                    description: `Internal marks average is ${student.averageScore}%. Review unit-wise question banks and video lectures to clear exams.`,
+                    actionText: 'View PYQ Bank & Video Playlist'
+                });
+            }
+            if (student.backlogs > 0) {
+                items.push({
+                    type: 'BACKLOG_CLEARANCE',
+                    severity: 'CRITICAL',
+                    title: `Active Backlogs Advisory (${student.backlogs} Subject${student.backlogs > 1 ? 's' : ''})`,
+                    description: 'University examination form clearance portal is open. Ensure backlog registration fee clearance.',
+                    actionText: 'Go to AKTU/NIET Exam Portal'
+                });
+            }
+            if (!items.length) {
+                items.push({
+                    type: 'GOOD_STANDING',
+                    severity: 'SAFE',
+                    title: 'Good Standing - Academic Milestone Met',
+                    description: 'Your attendance and marks exceed university benchmarks. Keep maintaining regular participation.',
+                    actionText: 'Explore Honors Certification'
+                });
+            }
+        }
+
+        remedialContainer.innerHTML = items.map(item => {
+            let icon = '🎯';
+            let borderClass = 'safe';
+            let btnClass = 'btn-secondary';
+            if (item.severity === 'CRITICAL') {
+                icon = '🚨';
+                borderClass = 'critical';
+                btnClass = 'btn-danger';
+            } else if (item.severity === 'WARNING') {
+                icon = '⚠️';
+                borderClass = 'warning';
+                btnClass = 'btn-warning';
+            }
+
+            let btnHtml = '';
+            if (item.type === 'ATTENDANCE_DEFICIT') {
+                btnHtml = `<button class="btn ${btnClass} btn-sm" onclick="downloadExemptionTemplate()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Download Exemption Form (PDF)</span>
+                </button>`;
+            } else if (item.type === 'ACADEMIC_REMEDIAL') {
+                btnHtml = `<button class="btn ${btnClass} btn-sm" onclick="openStudyResourcesModal()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    <span>View PYQ Bank & Video Playlist</span>
+                </button>`;
+            } else if (item.type === 'BACKLOG_CLEARANCE') {
+                btnHtml = `<a href="https://erp.aktu.ac.in" target="_blank" class="btn ${btnClass} btn-sm" style="text-decoration:none;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    <span>AKTU / NIET Exam Portal &rarr;</span>
+                </a>`;
+            } else {
+                btnHtml = `<span class="badge badge-success">Good Standing</span>`;
+            }
+
+            return `
+                <div class="remedial-card ${borderClass}">
+                    <div class="remedial-card-left">
+                        <div class="remedial-card-title">
+                            <span>${icon}</span>
+                            <span>${escapeHtml(item.title)}</span>
+                            <span class="badge ${item.severity === 'CRITICAL' ? 'badge-danger' : (item.severity === 'WARNING' ? 'badge-warning' : 'badge-success')}" style="font-size:10px; margin-left:6px;">${item.severity}</span>
+                        </div>
+                        <p class="remedial-card-desc">${escapeHtml(item.description)}</p>
+                    </div>
+                    <div class="remedial-card-action">
+                        ${btnHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ============================================================
+    // FEATURE 3: Mentor Direct Contact & Scheduled Appointments
+    // ============================================================
+    if (student.mentor) {
+        const mName = document.getElementById('mentorNameDisplay');
+        const mMeta = document.getElementById('mentorMetaDisplay');
+        const mEmail = document.getElementById('linkEmailMentor');
+        const mInit = document.getElementById('mentorInitials');
+        if (mName) mName.textContent = `Faculty Proctor & Mentor: ${student.mentor.name}`;
+        if (mMeta) mMeta.textContent = `${student.mentor.department} | ${student.mentor.office}`;
+        if (mEmail) mEmail.href = `mailto:${student.mentor.email}`;
+        if (mInit && student.mentor.name) {
+            mInit.textContent = student.mentor.name.split(' ').map(x => x[0]).join('').substring(0, 2);
+        }
+    }
+
+    const appWrap = document.getElementById('studentAppointmentsWrap');
+    const appList = document.getElementById('studentAppointmentsList');
+    const appCount = document.getElementById('studentAppointmentsCount');
+
+    if (appWrap && appList) {
+        if (appointments && appointments.length > 0) {
+            appWrap.style.display = 'block';
+            if (appCount) appCount.textContent = `${appointments.length} Request${appointments.length > 1 ? 's' : ''}`;
+            appList.innerHTML = appointments.map(a => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
+                    <div>
+                        <strong style="color:#fff; font-size:13px;">${escapeHtml(a.subject)}</strong>
+                        <span style="display:block; font-size:11px; color:#94a3b8;">Reason: <b>${escapeHtml(a.reason)}</b> | Preferred: ${new Date(a.preferred_date || a.requested_at).toLocaleDateString()}</span>
+                    </div>
+                    <span class="badge ${a.status === 'RESOLVED' ? 'badge-success' : (a.status === 'ACKNOWLEDGED' ? 'badge-info' : 'badge-warning')}">${a.status}</span>
+                </div>
+            `).join('');
+        } else {
+            appWrap.style.display = 'none';
+        }
+    }
 
     // Render Student Marks Table
-    const grades = appDatabase.grades[student.id] || [
+    const grades = (apiGrades && apiGrades.length) ? apiGrades.map(g => ({
+        courseCode: g.course_code,
+        assessment: g.assessment_type,
+        marks: g.marks_obtained,
+        max: g.max_marks || 100,
+        percentage: g.percentage,
+        grade: g.letter_grade
+    })) : (appDatabase.grades[student.id] || [
         { courseCode: 'CCSEH0355', assessment: 'Mid-Term Exam', marks: Math.round(student.averageScore * 0.45), max: 50, percentage: student.averageScore, grade: student.grade },
         { courseCode: 'CCSEH0355', assessment: 'End-Term Exam', marks: student.averageScore, max: 100, percentage: student.averageScore, grade: student.grade },
         { courseCode: 'CCSEH0351', assessment: 'Data Structures Lab', marks: Math.round(student.averageScore * 0.48), max: 50, percentage: student.averageScore, grade: student.grade },
         { courseCode: 'CCSEH0351', assessment: 'End-Term Exam', marks: student.averageScore, max: 100, percentage: student.averageScore, grade: student.grade },
-    ];
+    ]);
 
     const tbody = document.getElementById('spGradesTableBody');
     if (tbody) {
@@ -850,9 +1054,190 @@ function setupEventListeners() {
         window.print();
     });
 
+    // ============================================================
+    // FEATURE 3: Student Proctor Meeting Scheduler Modal Handlers
+    // ============================================================
+    const meetingModal = document.getElementById('proctorMeetingModal');
     document.getElementById('btnBookMentoringSlot')?.addEventListener('click', () => {
-        alert('📅 Mentoring Appointment Request submitted!\n\nFaculty Proctor: Prof. Disha Saini\nDesignated Remedial Hours: Tuesdays & Thursdays (4:00 PM - 5:30 PM)\nLocation: Academic Block, Cabin 304.\nConfirmation copy sent to your institutional email.');
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        const dateInput = document.getElementById('meetDate');
+        if (dateInput) dateInput.value = d.toISOString().slice(0, 10);
+        meetingModal?.classList.add('open');
     });
+    document.getElementById('meetingModalCloseBtn')?.addEventListener('click', () => meetingModal?.classList.remove('open'));
+    document.getElementById('meetCancelBtn')?.addEventListener('click', () => meetingModal?.classList.remove('open'));
+
+    document.getElementById('proctorMeetingForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const token = sessionStorage.getItem('niet_jwt_token');
+        if (!token) {
+            alert('Please sign in to schedule an appointment with your faculty mentor.');
+            return;
+        }
+
+        const submitBtn = document.getElementById('btnSubmitAppointment');
+        const originalText = submitBtn.innerHTML;
+
+        const payload = {
+            subject: document.getElementById('meetSubject').value.trim(),
+            reason: document.getElementById('meetReason').value,
+            preferredDate: document.getElementById('meetDate').value,
+            notes: document.getElementById('meetNotes').value.trim()
+        };
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Logging in Supabase...</span>';
+
+            const res = await fetch('/api/appointments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                meetingModal.classList.remove('open');
+                document.getElementById('proctorMeetingForm').reset();
+                fetchStudentProfileFromApi();
+                alert('📅 Meeting Scheduled Successfully! Your request has been recorded in Supabase and queued for Proctor Prof. Disha Saini.');
+            } else {
+                alert(data.error || 'Failed to schedule appointment');
+            }
+        } catch (err) {
+            console.error('Appointment submit error:', err);
+            alert('Network error submitting appointment request.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+
+    // ============================================================
+    // STUDENT REGISTRATION MODAL HANDLERS
+    // ============================================================
+    const regModal = document.getElementById('studentRegisterModal');
+    document.getElementById('linkOpenRegisterModal')?.addEventListener('click', () => {
+        regModal?.classList.add('open');
+        hideRegAlert();
+    });
+    document.getElementById('regModalCloseBtn')?.addEventListener('click', () => regModal?.classList.remove('open'));
+    document.getElementById('regCancelBtn')?.addEventListener('click', () => regModal?.classList.remove('open'));
+
+    document.getElementById('studentRegisterForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('btnSubmitRegister');
+        const originalText = submitBtn.innerHTML;
+        hideRegAlert();
+
+        const payload = {
+            name: document.getElementById('regName').value.trim(),
+            email: document.getElementById('regEmail').value.trim(),
+            password: document.getElementById('regPassword').value.trim(),
+            erpId: document.getElementById('regErp').value.trim(),
+            rollNumber: document.getElementById('regRoll').value.trim(),
+            section: document.getElementById('regSection').value.trim(),
+            semester: parseInt(document.getElementById('regSem').value) || 5,
+            totalClassesHeld: parseInt(document.getElementById('regHeld').value) || 60,
+            classesAttended: parseInt(document.getElementById('regAttended').value) || 50,
+            internalMarksPct: parseFloat(document.getElementById('regMarks').value) || 75,
+            activeBacklogs: parseInt(document.getElementById('regBacklogs').value) || 0
+        };
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Saving to Supabase PostgreSQL...</span>';
+
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                sessionStorage.setItem('niet_jwt_token', data.token);
+                currentSession = {
+                    isLoggedIn: true,
+                    role: 'STUDENT',
+                    user: data.user
+                };
+                sessionStorage.setItem('niet_active_session', JSON.stringify(currentSession));
+                regModal.classList.remove('open');
+                document.getElementById('studentRegisterForm').reset();
+                showAppWorkspace();
+                alert(`🎉 Student Registration Successful! Welcome ${data.user.name}. Your academic risk profile and target calculator are live from Supabase.`);
+                return;
+            } else {
+                showRegAlert(data.error || 'Registration failed. Please check your details.');
+            }
+        } catch (err) {
+            console.error('Registration network error:', err);
+            showRegAlert('Network error occurred during registration.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+
+    // ============================================================
+    // FEATURE 4: Debarment PDF Export Handler
+    // ============================================================
+    document.getElementById('btnExportDebarmentPdf')?.addEventListener('click', () => {
+        exportDebarmentNoticePdf();
+    });
+
+    // ============================================================
+    // FEATURE 5: CSV / Excel Bulk Upload Handlers
+    // ============================================================
+    document.getElementById('btnDownloadCsvSample')?.addEventListener('click', () => {
+        downloadCsvSampleTemplate();
+    });
+
+    const fileInput = document.getElementById('bulkUploadFileInput');
+    document.getElementById('btnBrowseCsvFile')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput?.click();
+    });
+    fileInput?.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+            handleBulkCsvUpload(e.target.files[0]);
+        }
+    });
+
+    const dropZone = document.getElementById('bulkUploadDropZone');
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleBulkCsvUpload(e.dataTransfer.files[0]);
+            }
+        });
+        dropZone.addEventListener('click', (e) => {
+            if (!e.target.closest('#btnBrowseCsvFile') && !e.target.closest('#btnDownloadCsvSample')) {
+                fileInput?.click();
+            }
+        });
+    }
+
+    // ============================================================
+    // FEATURE 2: Curated Study Resources Modal Handlers
+    // ============================================================
+    const studyModal = document.getElementById('studyResourcesModal');
+    document.getElementById('studyModalCloseBtn')?.addEventListener('click', () => studyModal?.classList.remove('open'));
+    document.getElementById('studyModalDoneBtn')?.addEventListener('click', () => studyModal?.classList.remove('open'));
+    document.getElementById('btnDownloadPyqPdf')?.addEventListener('click', () => downloadPyqPdf());
 
     // 6. Search Box
     document.getElementById('searchInput')?.addEventListener('input', () => {
@@ -1147,3 +1532,509 @@ function escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+function showRegAlert(msg) {
+    const box = document.getElementById('regAlertBox');
+    if (box) {
+        box.textContent = msg;
+        box.style.display = 'block';
+    }
+}
+
+function hideRegAlert() {
+    const box = document.getElementById('regAlertBox');
+    if (box) box.style.display = 'none';
+}
+
+// ====================================================================
+// FEATURE 3: Faculty Proctor Appointment Queue Functions
+// ====================================================================
+async function fetchFacultyAppointments() {
+    const token = sessionStorage.getItem('niet_jwt_token');
+    if (!token) return;
+    try {
+        const res = await fetch('/api/appointments', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            renderFacultyAppointments(data.appointments || []);
+        }
+    } catch (e) {
+        console.warn('Faculty appointments fetch error:', e);
+    }
+}
+
+function renderFacultyAppointments(appointments) {
+    const tbody = document.getElementById('facultyAppointmentsTableBody');
+    const badge = document.getElementById('pendingAppointmentsBadge');
+    if (!tbody) return;
+
+    const pending = appointments.filter(a => a.status === 'PENDING').length;
+    if (badge) badge.textContent = `${pending} Pending Request${pending !== 1 ? 's' : ''}`;
+
+    if (!appointments.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:24px;">No student proctor requests in queue.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = appointments.map(a => {
+        const att = a.attendance_pct ? parseFloat(a.attendance_pct) : 75;
+        let actionBtn = '';
+        if (a.status === 'PENDING') {
+            actionBtn = `<button class="btn-ack" onclick="updateAppointmentStatus('${a.id}', 'ACKNOWLEDGED')">Acknowledge</button>`;
+        } else if (a.status === 'ACKNOWLEDGED') {
+            actionBtn = `<button class="btn-resolve" onclick="updateAppointmentStatus('${a.id}', 'RESOLVED')">Mark Resolved</button>`;
+        } else {
+            actionBtn = `<span style="color:#34d399; font-size:12px; font-weight:600;">✓ Completed</span>`;
+        }
+
+        return `
+            <tr>
+                <td>
+                    <strong>${escapeHtml(a.student_name || 'Student')}</strong>
+                    <small style="display:block; color:#94a3b8;">ERP: ${escapeHtml(a.student_erp || '--')}</small>
+                </td>
+                <td>${escapeHtml(a.section || 'CSE-R')}</td>
+                <td>
+                    <span style="font-weight:600; color:${att < 75 ? '#ef4444' : '#10b981'};">
+                        ${att}% ${att < 75 ? '⚠️' : ''}
+                    </span>
+                </td>
+                <td><span class="badge ${a.reason === 'Attendance Shortage' ? 'badge-danger' : (a.reason === 'Academic Doubt' ? 'badge-warning' : 'badge-info')}">${escapeHtml(a.reason)}</span></td>
+                <td style="max-width:200px;">
+                    <strong style="font-size:12px; color:#f8fafc;">${escapeHtml(a.subject)}</strong>
+                    ${a.notes ? `<small style="display:block; color:#94a3b8;">${escapeHtml(truncate(a.notes, 40))}</small>` : ''}
+                </td>
+                <td>${a.preferred_date ? new Date(a.preferred_date).toLocaleDateString() : '--'}</td>
+                <td>
+                    <span class="badge ${a.status === 'RESOLVED' ? 'badge-success' : (a.status === 'ACKNOWLEDGED' ? 'badge-info' : 'badge-warning')}">${a.status}</span>
+                </td>
+                <td style="text-align:right;">
+                    ${actionBtn}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+window.updateAppointmentStatus = async function(id, newStatus) {
+    const token = sessionStorage.getItem('niet_jwt_token');
+    if (!token) return;
+    try {
+        const res = await fetch('/api/appointments', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ appointmentId: id, status: newStatus })
+        });
+        if (res.ok) {
+            fetchFacultyAppointments();
+        } else {
+            alert('Failed to update status');
+        }
+    } catch (e) {
+        console.error('Error updating appointment:', e);
+    }
+};
+
+// ====================================================================
+// FEATURE 4: One-Click Official Debarment PDF Export
+// ====================================================================
+window.exportDebarmentNoticePdf = function() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert('PDF generator library is loading, please try again in a moment.');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const enriched = enrichStudentsList();
+    const debarred = enriched.filter(s => s.attendance < 75.0);
+
+    // Official NIET Header Banner
+    doc.setFillColor(15, 23, 42); // Institutional Dark Navy
+    doc.rect(0, 0, 210, 32, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('NOIDA INSTITUTE OF ENGINEERING & TECHNOLOGY (NIET), GREATER NOIDA', 105, 12, { align: 'center' });
+    
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('An Autonomous Institute Affiliated to Dr. A.P.J. Abdul Kalam Technical University (AKTU), Lucknow', 105, 18, { align: 'center' });
+    doc.text('DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING (CSE-R) | ACADEMIC BLOCK', 105, 24, { align: 'center' });
+
+    // Official Notice Metadata
+    doc.setTextColor(30, 41, 59);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('OFFICIAL ACADEMIC NOTICE: ATTENDANCE SHORTAGE & DEBARMENT LIST', 105, 42, { align: 'center' });
+
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    const refNo = `Ref: NIET/CSE-R/DEBAR/${new Date().getFullYear()}/` + String(Math.floor(Math.random() * 900) + 100);
+    const dateStr = `Date: ${new Date().toLocaleDateString('en-GB')}`;
+    doc.text(refNo, 14, 50);
+    doc.text(dateStr, 196, 50, { align: 'right' });
+
+    // Warning Text Clause
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    const warningText = "Pursuant to AKTU Ordinance Rule 2.1 & NIET Autonomous Academic Regulations, students failing to maintain the mandatory 75% minimum aggregate attendance are officially categorized under SHORTAGE / DEBARMENT WARNING. The following students are advised to report immediately to their Faculty Proctor with medical/official justification before the final examination admit card freeze.";
+    const splitWarning = doc.splitTextToSize(warningText, 182);
+    doc.text(splitWarning, 14, 56);
+
+    // Table Header
+    let y = 70;
+    doc.setFillColor(241, 245, 249);
+    doc.rect(14, y, 182, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    doc.text('S.No', 16, y + 5);
+    doc.text('Roll Number', 26, y + 5);
+    doc.text('ERP ID', 58, y + 5);
+    doc.text('Student Name', 84, y + 5);
+    doc.text('Section', 130, y + 5);
+    doc.text('Att. %', 152, y + 5);
+    doc.text('Risk Level', 170, y + 5);
+
+    // Table Rows
+    doc.setFont('helvetica', 'normal');
+    y += 8;
+
+    debarred.forEach((s, idx) => {
+        if (y > 250) {
+            doc.addPage();
+            y = 20;
+        }
+        if (idx % 2 === 1) {
+            doc.setFillColor(248, 250, 252);
+            doc.rect(14, y, 182, 7, 'F');
+        }
+        doc.text(String(idx + 1), 16, y + 5);
+        doc.text(s.rollNumber || ('21013301000' + String(idx + 1)), 26, y + 5);
+        doc.text(s.erpId, 58, y + 5);
+        doc.text(s.name, 84, y + 5);
+        doc.text(`${s.section} (Sem ${s.semester})`, 130, y + 5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(220, 38, 38); // Red
+        doc.text(`${s.attendance}%`, 152, y + 5);
+        doc.setTextColor(s.riskLevel === 'HIGH_RISK' ? 220 : 217, s.riskLevel === 'HIGH_RISK' ? 38 : 119, s.riskLevel === 'HIGH_RISK' ? 38 : 6);
+        doc.text(s.riskLabel, 170, y + 5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 41, 59);
+        y += 7;
+    });
+
+    // Summary Box
+    y += 6;
+    doc.setFillColor(254, 242, 242);
+    doc.rect(14, y, 182, 9, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(185, 28, 28);
+    doc.text(`Total Students Debarred / Under Attendance Shortage: ${debarred.length} of ${enriched.length} enrolled cohort students.`, 18, y + 6);
+
+    // Signatures
+    y += 24;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(15, 23, 42);
+
+    // Proctor Sig
+    doc.line(18, y, 68, y);
+    doc.text('Prof. Disha Saini', 18, y + 5);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Faculty Proctor & Mentor (CSE-R)', 18, y + 9);
+
+    // Dean / HOD Sig
+    doc.line(142, y, 192, y);
+    doc.setFontSize(9);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Dr. HOD / Dean Academics', 142, y + 5);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('NIET Autonomous Institute', 142, y + 9);
+
+    // Footer
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text('Official Document generated by NIET Academic Performance & Risk Intelligence System | Supabase DB', 105, 285, { align: 'center' });
+
+    doc.save(`NIET_Debarment_Notice_CSE-R_${new Date().toISOString().slice(0, 10)}.pdf`);
+};
+
+// ====================================================================
+// FEATURE 5: CSV / Excel Bulk Upload Handlers
+// ====================================================================
+window.handleBulkCsvUpload = async function(file) {
+    if (!file) return;
+    const progressWrap = document.getElementById('bulkUploadProgress');
+    const progressBar = document.getElementById('bulkUploadBar');
+    const statusText = document.getElementById('bulkUploadStatus');
+
+    progressWrap.style.display = 'block';
+    progressBar.style.width = '20%';
+    statusText.textContent = `Reading ${file.name}...`;
+
+    const text = await file.text();
+    progressBar.style.width = '40%';
+    statusText.textContent = 'Parsing student records...';
+
+    // Parse CSV lines
+    const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+    if (lines.length < 2) {
+        alert('CSV file is empty or missing headers.');
+        progressWrap.style.display = 'none';
+        return;
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+    
+    // Find index of columns
+    const rollIdx = headers.findIndex(h => h.includes('roll'));
+    const nameIdx = headers.findIndex(h => h.includes('name'));
+    const erpIdx = headers.findIndex(h => h.includes('erp'));
+    const secIdx = headers.findIndex(h => h.includes('section') || h.includes('sec'));
+    const totalIdx = headers.findIndex(h => h.includes('total') || h.includes('held'));
+    const attIdx = headers.findIndex(h => h.includes('attend') && !h.includes('total') && !h.includes('%'));
+    const attPctIdx = headers.findIndex(h => h.includes('att') && (h.includes('%') || h.includes('pct')));
+    const marksIdx = headers.findIndex(h => h.includes('mark') || h.includes('score') || h.includes('avg'));
+    const backIdx = headers.findIndex(h => h.includes('backlog'));
+
+    const batch = [];
+
+    for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(',').map(p => p.trim().replace(/^["']|["']$/g, ''));
+        if (parts.length < 2) continue;
+
+        const rollNo = rollIdx >= 0 ? parts[rollIdx] : '';
+        const name = nameIdx >= 0 ? parts[nameIdx] : ('Student ' + i);
+        const erpId = erpIdx >= 0 ? parts[erpIdx] : ('NIET2021' + String(100 + i));
+        const section = secIdx >= 0 ? parts[secIdx] : 'CSE-R-A';
+        const total = totalIdx >= 0 ? parseInt(parts[totalIdx]) || 60 : 60;
+        const attended = attIdx >= 0 ? parseInt(parts[attIdx]) || 50 : (attPctIdx >= 0 ? Math.round(total * (parseFloat(parts[attPctIdx]) / 100)) : 50);
+        const marks = marksIdx >= 0 ? parseFloat(parts[marksIdx]) || 70 : 70;
+        const backlogs = backIdx >= 0 ? parseInt(parts[backIdx]) || 0 : 0;
+
+        batch.push({
+            rollNo,
+            name,
+            erpId,
+            section,
+            semester: 5,
+            totalClasses: total,
+            attended,
+            marksPct: marks,
+            backlogs
+        });
+    }
+
+    if (!batch.length) {
+        alert('No valid student rows found in file.');
+        progressWrap.style.display = 'none';
+        return;
+    }
+
+    progressBar.style.width = '70%';
+    statusText.textContent = `Uploading ${batch.length} student records to Supabase & calculating risk...`;
+
+    const token = sessionStorage.getItem('niet_jwt_token');
+    try {
+        const res = await fetch('/api/admin/bulk-upload', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ studentsBatch: batch })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            progressBar.style.width = '100%';
+            statusText.textContent = `✓ Ingested and scored ${data.importedCount} student records!`;
+            await sleep(600);
+            fetchCohortAnalyticsFromApi();
+            alert(`🎉 Success! ${data.importedCount} student records bulk ingested into Supabase. Cohort risk charts and tables updated instantly!`);
+        } else {
+            alert(data.error || 'Bulk upload failed');
+        }
+    } catch (e) {
+        console.error('Bulk upload error:', e);
+        alert('Network error during bulk upload');
+    } finally {
+        setTimeout(() => { progressWrap.style.display = 'none'; }, 2000);
+    }
+};
+
+window.downloadCsvSampleTemplate = function() {
+    const csvContent = "Roll No,Name,ERP ID,Section,Total Classes,Attended,Marks %,Backlogs\n" +
+        "2101330100013,Kavya Singhal,NIET2021013,CSE-R-A,60,52,78,0\n" +
+        "2101330100014,Manish Kumar,NIET2021014,CSE-R-B,60,38,42,2\n" +
+        "2101330100015,Simran Kaur,NIET2021015,CSE-R-A,60,55,86,0\n" +
+        "2101330100016,Vikas Sharma,NIET2021016,CSE-R-B,60,40,48,1\n";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'NIET_Class_Marks_Sheet_Sample.csv';
+    a.click();
+};
+
+// ====================================================================
+// FEATURE 2: Dynamic Remedial Guidance Helpers
+// ====================================================================
+window.downloadExemptionTemplate = function() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert('PDF generator loading...');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, 210, 28, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('NOIDA INSTITUTE OF ENGINEERING & TECHNOLOGY, GREATER NOIDA', 105, 12, { align: 'center' });
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('OFFICE OF THE DEAN ACADEMICS | ATTENDANCE & MEDICAL EXEMPTION REQUISITION FORM', 105, 18, { align: 'center' });
+
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('STUDENT REQUISITION FOR ATTENDANCE CONDONATION / PROCTOR EXEMPTION', 105, 38, { align: 'center' });
+
+    let y = 50;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Student Name: _____________________________________   Roll No: _________________________`, 20, y);
+    y += 10;
+    doc.text(`Institutional ERP ID: _____________________________   Branch/Section: CSE-R-A  Sem: 5`, 20, y);
+    y += 10;
+    doc.text(`Faculty Proctor: Prof. Disha Saini                  Contact No: ______________________`, 20, y);
+    y += 12;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Category of Exemption Claimed (Check applicable):', 20, y);
+    y += 8;
+    doc.setFont('helvetica', 'normal');
+    doc.text('[  ] Medical Leave (Doctor certificate & OPD slip attached)', 25, y);
+    y += 6;
+    doc.text('[  ] Institutional Event / Hackathon / Sports Representation', 25, y);
+    y += 6;
+    doc.text('[  ] Urgent Family Emergency / Compassionate Leave', 25, y);
+    y += 12;
+    doc.text('Period of Absence: From ______________________ To ______________________ (Total Days: ____)', 20, y);
+    y += 12;
+    doc.text('Reason & Description of Absence:', 20, y);
+    y += 6;
+    doc.rect(20, y, 170, 24);
+    y += 34;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('UNDERTAKING BY STUDENT & PARENT:', 20, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const splitU = doc.splitTextToSize('I hereby declare that the particulars submitted above are true to the best of my knowledge. I understand that granting of exemption is subject to scrutiny by the Academic Review Board and Proctorial Board. I undertake to attend all remaining lectures to cross the mandatory 75% threshold.', 170);
+    doc.text(splitU, 20, y);
+    y += 24;
+
+    doc.line(20, y, 70, y);
+    doc.text('Student Signature', 20, y + 4);
+
+    doc.line(80, y, 130, y);
+    doc.text('Parent Signature & Phone', 80, y + 4);
+
+    doc.line(140, y, 190, y);
+    doc.text('Prof. Disha Saini (Proctor)', 140, y + 4);
+
+    y += 22;
+    doc.setFillColor(241, 245, 249);
+    doc.rect(20, y, 170, 20, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.text('FOR OFFICE USE ONLY (DEAN ACADEMICS APPROVAL):', 24, y + 6);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Exemption Status: [  ] APPROVED (Up to 10% Condonation)     [  ] REJECTED', 24, y + 13);
+
+    doc.save('NIET_Attendance_Medical_Exemption_Form.pdf');
+};
+
+window.openStudyResourcesModal = function() {
+    document.getElementById('studyResourcesModal')?.classList.add('open');
+};
+
+window.downloadPyqPdf = function() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert('PDF generator loading...');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, 210, 28, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('NIET GREATER NOIDA - DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING', 105, 12, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Course: CCSEH0355 - Object Oriented Techniques using Java | Question Bank (2022-2025)', 105, 18, { align: 'center' });
+
+    doc.setTextColor(30, 41, 59);
+    let y = 38;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('UNIT 1: Object-Oriented Paradigms & JVM Architecture', 15, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Q1. Explain JVM, JRE, and JDK with a detailed architectural diagram. [7 Marks - 2024 End-Term]', 20, y);
+    y += 6;
+    doc.text('Q2. Differentiate between method overloading and method overriding with code snippets. [7 Marks - 2023 End-Term]', 20, y);
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('UNIT 2: Inheritance, Polymorphism & Package Management', 15, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Q3. Why multiple inheritance is not supported through classes in Java? How interfaces resolve this? [7 Marks]', 20, y);
+    y += 6;
+    doc.text('Q4. Explain dynamic method dispatch with a real-world vehicle inheritance hierarchy. [7 Marks - 2024 Mid-Term]', 20, y);
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('UNIT 3 & 4: Exception Handling & Multi-threaded Programming', 15, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Q5. Differentiate between checked and unchecked exceptions. Write custom InvalidAttendanceException. [7 Marks]', 20, y);
+    y += 6;
+    doc.text('Q6. Explain thread lifecycle and synchronization mechanisms using synchronized blocks and wait/notify. [7 Marks]', 20, y);
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('UNIT 5: Java Collections Framework & File I/O Streams', 15, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Q7. Compare ArrayList vs LinkedList in terms of internal array resizing, indexing, and insertion complexity. [7 Marks]', 20, y);
+    y += 6;
+    doc.text('Q8. Write a Java program using BufferedReader/BufferedWriter to parse student attendance records. [7 Marks]', 20, y);
+
+    doc.save('NIET_CCSEH0355_Java_OOPs_PYQs.pdf');
+};
+
