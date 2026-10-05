@@ -595,13 +595,34 @@ window.openStudentDetailModal = function(studentId) {
 // Event Listeners Setup
 function setupEventListeners() {
     // 1. Role Tabs in Login Screen
-    document.querySelectorAll('.login-tab-btn').forEach(btn => {
+    document.querySelectorAll('.login-tab-btn, .examly-tab').forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.login-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.login-tab-btn, .examly-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             selectedLoginTab = btn.getAttribute('data-type');
             updateLoginFormPlaceholders();
         });
+    });
+
+    // Password Visibility Eye Toggle
+    const btnTogglePw = document.getElementById('btnTogglePassword');
+    const pwInput = document.getElementById('loginPassword');
+    const eyeIcon = document.getElementById('eyeIcon');
+    if (btnTogglePw && pwInput) {
+        btnTogglePw.addEventListener('click', () => {
+            const isPassword = pwInput.type === 'password';
+            pwInput.type = isPassword ? 'text' : 'password';
+            if (eyeIcon) {
+                eyeIcon.innerHTML = isPassword
+                    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>'
+                    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+            }
+        });
+    }
+
+    // Forgot Password Dialog
+    document.getElementById('linkForgotPassword')?.addEventListener('click', () => {
+        alert('For institutional password recovery, please contact NIET ERP Cell (erp.support@niet.co.in) or your assigned faculty proctor with your Student ERP ID.');
     });
 
     function updateLoginFormPlaceholders() {

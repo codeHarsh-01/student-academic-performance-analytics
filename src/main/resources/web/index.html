@@ -14,93 +14,153 @@
 </head>
 <body>
 
-    <!-- 1. FULL-SCREEN INSTITUTIONAL LOGIN GATEWAY -->
+    <!-- 1. FULL-SCREEN EXAMLY-STYLE INSTITUTIONAL LOGIN GATEWAY -->
     <div class="login-gateway-overlay" id="loginGateway">
-        <div class="login-container glass-panel">
-            <div class="login-brand-header">
-                <div class="login-logo-circle">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                    </svg>
-                </div>
-                <h2>NIET Greater Noida</h2>
-                <span class="sub-badge-gold">Autonomous Institute | Affiliated to AKTU</span>
-                <h3>Academic Performance & Early Risk Detection Gateway</h3>
-                <p class="login-course-tag">Department of Computer Science & Engineering (CSE-R) | Course CCSEH0355</p>
-            </div>
-
-            <!-- Role Selector Tabs -->
-            <div class="login-tabs">
-                <button class="login-tab-btn active" data-type="STUDENT" id="tabStudent">
-                    <span class="tab-icon">🎓</span>
-                    <span>Student Portal</span>
-                </button>
-                <button class="login-tab-btn" data-type="FACULTY" id="tabFaculty">
-                    <span class="tab-icon">👨‍🏫</span>
-                    <span>Faculty Mentor</span>
-                </button>
-                <button class="login-tab-btn" data-type="ADMIN" id="tabAdmin">
-                    <span class="tab-icon">👑</span>
-                    <span>HOD / Admin</span>
-                </button>
-            </div>
-
-            <!-- Dynamic Login Form -->
-            <form id="loginForm" class="login-form">
-                <div id="loginAlertBox" class="login-alert" style="display: none;"></div>
-
-                <div class="form-group" id="groupLoginIdentifier">
-                    <label id="lblLoginIdentifier">Student Institutional ERP ID</label>
-                    <div class="input-with-icon">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        <input type="text" id="loginIdentifier" class="form-input" placeholder="e.g. NIET2021001" required>
+        <div class="examly-login-split">
+            <!-- Left Pane: Institutional Branding & Feature Showcase -->
+            <div class="examly-left-pane">
+                <div class="examly-brand-top">
+                    <div class="examly-logo-badge">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="brand-niet-title">NIET GREATER NOIDA</h4>
+                        <span class="brand-autonomy-tag">Autonomous Institute | NAAC 'A' Grade</span>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Account Password</label>
-                    <div class="input-with-icon">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        <input type="password" id="loginPassword" class="form-input" placeholder="Enter password" required>
+                <div class="examly-hero-content">
+                    <span class="examly-pill-tag">ACADEMIC PERFORMANCE & RISK INTELLIGENCE</span>
+                    <h2>Assess. Predict. <br><span class="gradient-text">Excel Together.</span></h2>
+                    <p class="hero-desc">Institutional predictive analytics platform designed for B.Tech CSE-R to identify at-risk students early and drive personalized remedial interventions.</p>
+
+                    <div class="hero-feature-list">
+                        <div class="hero-feature-item">
+                            <div class="feat-icon">🎯</div>
+                            <div>
+                                <b>Multi-Factor Risk Engine</b>
+                                <span>Weighted 40/40/20 algorithm analyzing attendance, marks & backlogs</span>
+                            </div>
+                        </div>
+                        <div class="hero-feature-item">
+                            <div class="feat-icon">⚠️</div>
+                            <div>
+                                <b>75% Attendance Guard</b>
+                                <span>Automated debarment alerts & proctor intervention dispatch</span>
+                            </div>
+                        </div>
+                        <div class="hero-feature-item">
+                            <div class="feat-icon">🔄</div>
+                            <div>
+                                <b>NIET iCloudEMS Gateway</b>
+                                <span>Seamless real-time cohort assessment synchronization</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnSubmitLogin">
-                    <span id="loginBtnText">Sign In to Student Portal</span>
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
-            </form>
-
-            <!-- Quick Auto-Fill Demo Credentials for Examiners -->
-            <div class="demo-accounts-card">
-                <div class="demo-card-header">
-                    <span class="sparkle-icon">⚡</span>
-                    <b>Evaluator Quick Sign-In (Click to Auto-fill):</b>
-                </div>
-                <div class="demo-pills-grid">
-                    <button class="demo-pill" id="demoFillStudentGood">
-                        <span class="role-dot dot-green"></span>
-                        <b>Student (Safe):</b> NIET2021001 / student123
-                    </button>
-                    <button class="demo-pill" id="demoFillStudentRisk">
-                        <span class="role-dot dot-red"></span>
-                        <b>Student (At-Risk):</b> NIET2021002 / student123
-                    </button>
-                    <button class="demo-pill" id="demoFillFaculty">
-                        <span class="role-dot dot-blue"></span>
-                        <b>Faculty:</b> faculty@niet.co.in / faculty123
-                    </button>
-                    <button class="demo-pill" id="demoFillAdmin">
-                        <span class="role-dot dot-purple"></span>
-                        <b>HOD Admin:</b> hod@niet.co.in / admin123
-                    </button>
+                <div class="examly-left-footer">
+                    <span>Course: <b>CCSEH0355</b> (Java OOPs)</span>
+                    <span>Team: <b>G-2</b> | Mentor: <b>Disha Saini</b></span>
                 </div>
             </div>
 
-            <div class="login-footer-security">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                <span>End-to-End Encrypted Session | Role-Based Access Control (RBAC) Active</span>
+            <!-- Right Pane: Examly Clean Form Container -->
+            <div class="examly-right-pane">
+                <div class="examly-form-card">
+                    <div class="form-card-header">
+                        <div class="form-header-badge">NIET SECURE GATEWAY</div>
+                        <h3>Sign In to Your Account</h3>
+                        <p>Select your institutional role to access your academic portal</p>
+                    </div>
+
+                    <!-- Role Tabs (Examly Pill Design) -->
+                    <div class="examly-role-segmented">
+                        <button class="examly-tab active" data-type="STUDENT" id="tabStudent">
+                            <span>🎓 Student</span>
+                        </button>
+                        <button class="examly-tab" data-type="FACULTY" id="tabFaculty">
+                            <span>👨‍🏫 Faculty</span>
+                        </button>
+                        <button class="examly-tab" data-type="ADMIN" id="tabAdmin">
+                            <span>👑 HOD Admin</span>
+                        </button>
+                    </div>
+
+                    <form id="loginForm" class="examly-login-form">
+                        <div id="loginAlertBox" class="login-alert" style="display: none;"></div>
+
+                        <div class="form-group">
+                            <label id="lblLoginIdentifier">Student Institutional ERP ID</label>
+                            <div class="examly-input-wrap">
+                                <span class="input-icon">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                </span>
+                                <input type="text" id="loginIdentifier" class="examly-input" placeholder="e.g. NIET2021001" required autocomplete="username">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="label-row">
+                                <label>Password</label>
+                                <a href="javascript:void(0)" class="forgot-link" id="linkForgotPassword">Forgot Password?</a>
+                            </div>
+                            <div class="examly-input-wrap">
+                                <span class="input-icon">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                </span>
+                                <input type="password" id="loginPassword" class="examly-input" placeholder="Enter your password" required autocomplete="current-password">
+                                <button type="button" class="btn-toggle-eye" id="btnTogglePassword" title="Show/Hide Password">
+                                    <svg id="eyeIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="remember-row">
+                            <label class="remember-chk">
+                                <input type="checkbox" id="chkRememberMe" checked>
+                                <span>Remember my login</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn-examly-primary" id="btnSubmitLogin">
+                            <span id="loginBtnText">Sign In to Student Portal</span>
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </button>
+                    </form>
+
+                    <!-- Evaluator Quick Fill Pills -->
+                    <div class="evaluator-card">
+                        <div class="eval-title">
+                            <span>⚡</span> <b>Evaluator Quick Access (Click to Fill):</b>
+                        </div>
+                        <div class="eval-buttons">
+                            <button type="button" class="eval-btn" id="demoFillStudentGood">
+                                <span class="badge-dot dot-green"></span>
+                                <span>Student: <b>NIET2021001</b></span>
+                            </button>
+                            <button type="button" class="eval-btn" id="demoFillStudentRisk">
+                                <span class="badge-dot dot-red"></span>
+                                <span>Student (Risk): <b>NIET2021002</b></span>
+                            </button>
+                            <button type="button" class="eval-btn" id="demoFillFaculty">
+                                <span class="badge-dot dot-blue"></span>
+                                <span>Faculty: <b>faculty@niet.co.in</b></span>
+                            </button>
+                            <button type="button" class="eval-btn" id="demoFillAdmin">
+                                <span class="badge-dot dot-purple"></span>
+                                <span>HOD Admin: <b>hod@niet.co.in</b></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="examly-help-footer">
+                        <span>Having trouble logging in? Contact <b>NIET ERP Support</b> at <code>erp.support@niet.co.in</code></span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
