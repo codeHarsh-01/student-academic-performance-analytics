@@ -1189,7 +1189,13 @@ function setupEventListeners() {
                 body: JSON.stringify(payload)
             });
 
-            const data = await res.json();
+            let data;
+            try {
+                data = await res.json();
+            } catch (jsonErr) {
+                showRegAlert(`Server error (status ${res.status}). Please try again.`);
+                return;
+            }
 
             if (res.ok && data.success) {
                 sessionStorage.setItem('niet_jwt_token', data.token);
@@ -1199,8 +1205,9 @@ function setupEventListeners() {
                     user: data.user
                 };
                 sessionStorage.setItem('niet_active_session', JSON.stringify(currentSession));
-                regModal.classList.remove('open');
-                document.getElementById('studentRegisterForm').reset();
+                const modal = document.getElementById('studentRegisterModal');
+                if (modal) modal.classList.remove('open');
+                document.getElementById('studentRegisterForm')?.reset();
                 showAppWorkspace();
                 alert(`🎉 Student Registration Successful! Welcome ${data.user.name}. Your academic risk profile and target calculator are live from Supabase.`);
                 return;
@@ -1208,8 +1215,8 @@ function setupEventListeners() {
                 showRegAlert(data.error || 'Registration failed. Please check your details.');
             }
         } catch (err) {
-            console.error('Registration network error:', err);
-            showRegAlert('Network error occurred during registration.');
+            console.error('Registration error:', err);
+            showRegAlert(err.message ? `Network Error: ${err.message}` : 'Network error occurred during registration.');
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
