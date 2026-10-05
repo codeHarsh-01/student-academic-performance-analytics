@@ -288,7 +288,7 @@ function renderWorkspaceForSession() {
         badgeEl.textContent = '🎓 Student Portal';
 
         titleEl.textContent = `Student Academic Growth Portal - ${user.name}`;
-        subEl.textContent = `Institutional ERP: ${user.erpId} | Section ${user.section} | Semester ${user.semester} | NIET Greater Noida`;
+        subEl.textContent = `Institutional ERP: ${user.erpId} | Section ${user.section || 'CSDS'} | Semester ${user.semester || 5} | NIET Greater Noida`;
 
         // Configure Navigation for Student
         navMenu.innerHTML = `
