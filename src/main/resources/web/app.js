@@ -1971,6 +1971,7 @@ window.downloadExemptionTemplate = function() {
 window.openStudyResourcesModal = function() {
     document.getElementById('studyResourcesModal')?.classList.add('open');
 };
+window.openRemedialResources = window.openStudyResourcesModal;
 
 window.downloadPyqPdf = function() {
     if (!window.jspdf || !window.jspdf.jsPDF) {
