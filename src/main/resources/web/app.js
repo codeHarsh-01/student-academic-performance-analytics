@@ -4,6 +4,24 @@
 // Strict RBAC Authentication Gateway, Isolated Student & Faculty Views
 // ====================================================================
 
+window.openStudentRegisterModal = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const regModal = document.getElementById('studentRegisterModal');
+    if (regModal) {
+        regModal.classList.add('open');
+        const alertBox = document.getElementById('regAlertBox');
+        if (alertBox) alertBox.style.display = 'none';
+    }
+};
+
+window.closeStudentRegisterModal = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const regModal = document.getElementById('studentRegisterModal');
+    if (regModal) {
+        regModal.classList.remove('open');
+    }
+};
+
 // Default Seed Students (used if database empty)
 const DEFAULT_STUDENTS = [
     { id: 's001', name: 'Aarav Sharma',    erpId: 'NIET2021001', section: 'CSE-R-A', semester: 5, averageScore: 82, attendance: 88 },
@@ -1120,13 +1138,26 @@ function setupEventListeners() {
     // ============================================================
     // STUDENT REGISTRATION MODAL HANDLERS
     // ============================================================
-    const regModal = document.getElementById('studentRegisterModal');
-    document.getElementById('linkOpenRegisterModal')?.addEventListener('click', () => {
-        regModal?.classList.add('open');
-        hideRegAlert();
+    window.openStudentRegisterModal = function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        const regModal = document.getElementById('studentRegisterModal');
+        if (regModal) {
+            regModal.classList.add('open');
+            hideRegAlert();
+        }
+    };
+    window.closeStudentRegisterModal = function() {
+        const regModal = document.getElementById('studentRegisterModal');
+        if (regModal) {
+            regModal.classList.remove('open');
+        }
+    };
+
+    document.getElementById('linkOpenRegisterModal')?.addEventListener('click', (e) => {
+        window.openStudentRegisterModal(e);
     });
-    document.getElementById('regModalCloseBtn')?.addEventListener('click', () => regModal?.classList.remove('open'));
-    document.getElementById('regCancelBtn')?.addEventListener('click', () => regModal?.classList.remove('open'));
+    document.getElementById('regModalCloseBtn')?.addEventListener('click', () => window.closeStudentRegisterModal());
+    document.getElementById('regCancelBtn')?.addEventListener('click', () => window.closeStudentRegisterModal());
 
     document.getElementById('studentRegisterForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();

@@ -656,12 +656,12 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 20000;
     opacity: 0;
     pointer-events: none;
     transition: var(--transition-smooth);
@@ -675,7 +675,8 @@ body {
 .modal-card {
     width: 90%;
     max-width: 720px;
-    max-height: 85vh;
+    max-height: 90vh;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     padding: 28px;

@@ -135,7 +135,7 @@
 
                         <!-- Student Self-Registration Link -->
                         <div class="examly-register-link-row" style="text-align: center; margin-top: 14px;">
-                            <a href="javascript:void(0)" id="linkOpenRegisterModal" style="color: #38bdf8; font-size: 13px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                            <a href="javascript:void(0)" id="linkOpenRegisterModal" onclick="openStudentRegisterModal(event)" style="color: #38bdf8; font-size: 13px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
                                 <span>🎓 New Student? Register with Academic Profile</span>
                                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </a>
@@ -778,7 +778,7 @@
                     <h3 style="margin: 0; color: #fff;">🎓 Student Institutional Registration</h3>
                     <p class="chart-subtitle" style="margin: 2px 0 0 0;">Create your persistent Supabase account and enter initial academic metrics</p>
                 </div>
-                <button class="modal-close" id="regModalCloseBtn">&times;</button>
+                <button class="modal-close" id="regModalCloseBtn" onclick="closeStudentRegisterModal()">&times;</button>
             </div>
             <form id="studentRegisterForm" class="modal-form" style="padding: 20px;">
                 <div id="regAlertBox" class="login-alert" style="display: none; margin-bottom: 14px;"></div>
@@ -843,7 +843,7 @@
                 </div>
 
                 <div class="form-actions" style="margin-top: 10px;">
-                    <button type="button" class="btn btn-secondary" id="regCancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="regCancelBtn" onclick="closeStudentRegisterModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="btnSubmitRegister">
                         <span>Complete Registration & Launch Portal</span>
                     </button>
